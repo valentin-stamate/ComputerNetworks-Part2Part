@@ -17,32 +17,28 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 
-#include "sqlite/sqlite3.h"
+#include "import/sql.h"
 
-#define DATABASE "data.db"
-
-sqlite3* openDatabase(char*);
-
-void SQLInsert(sqlite3*, char*);
-void SQLGet(sqlite3*, char*);
-void SQLUpdate(sqlite3*, char*);
-void SQLDelete(sqlite3*, char*);
-
-int main() {
+int main(int argc, char *argv[]) {
 
     sqlite3 *db = openDatabase(DATABASE);
 
-    char *error;
-    int res = sqlite3_exec(db, "CREATE TABLE contacts (contact_id INTEGER PRIMARY KEY,first_name TEXT NOT NULL,last_name TEXT NOT NULL,email TEXT NOT NULL UNIQUE,phone TEXT NOT NULL UNIQUE);", NULL, NULL, &error);
+    if (argc == 2) {
+        initializeDatabase(db);
+    }
 
+    showAllUsers(db);
+    
+    User u = getUserByEmail(db, "stamatevalentin125@gmail.com");
+
+    printf("%s\n", u.firstname);
+
+    closeDatabase(db);
     return 0;
-
 }
 
-sqlite3* openDatabase(char* databaseName) {
-    sqlite3* db;
 
-    sqlite3_open(databaseName, &db);
 
-    return db;
-}
+
+
+
