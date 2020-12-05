@@ -19,6 +19,8 @@
 
 #include "import/sql.h"
 
+#define MAX_FILES 100
+
 int main(int argc, char *argv[]) {
 
     sqlite3 *db = openDatabase(DATABASE);
@@ -26,12 +28,21 @@ int main(int argc, char *argv[]) {
     if (argc == 2) {
         initializeDatabase(db);
     }
-
-    showAllUsers(db);
     
-    User u = getUserByEmail(db, "stamatevalentin125@gmail.com");
+    User u;
+    File file[MAX_FILES];
+    int nFiles = 0;
 
-    printf("%s\n", u.firstname);
+    char *email = "stamatevalentin125@gmail.com";
+
+    u = getUserByEmail(db, email);
+    showUser(&u);
+
+    getUserFiles(db, &u, file, &nFiles);
+
+    for (int i = 0; i < nFiles; i++) {
+        showFile(file + i);
+    }
 
     closeDatabase(db);
     return 0;

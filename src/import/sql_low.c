@@ -8,6 +8,8 @@ sqlite3* openDatabase(char* databaseName) {
 
     sqlite3_open(databaseName, &db);
 
+    SQLExecute(db, "PRAGMA foreign_keys = ON");
+
     return db;
 }
 void closeDatabase(sqlite3* db) {
@@ -34,7 +36,6 @@ void SQLInsert(sqlite3* db, char* sql) {
         printf("%s\n", error);
     }
 }
-
 
 
 void SQLGet(sqlite3* db, char* sql, int* nRow, int* nCol, char result[100][10][100]) { // taken from https://stackoverflow.com/questions/3957343/how-to-read-data-from-sqlite-database
@@ -87,6 +88,7 @@ void SQLGet(sqlite3* db, char* sql, int* nRow, int* nCol, char result[100][10][1
 void SQLUpdate(sqlite3* db, char* sql) {
 
 }
+
 void SQLDelete(sqlite3* db, char* sql) {
 
 }
