@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stddef.h>
-#include "sqlite/sqlite3.h"
+#include "../sqlite/sqlite3.h"
 
 #define DATABASE "data.db"
 #define CREATE_USER_TABLE "CREATE TABLE IF NOT EXISTS user( \

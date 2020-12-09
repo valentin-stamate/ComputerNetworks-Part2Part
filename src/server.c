@@ -1,31 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <limits.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <dirent.h>
-#include <pwd.h>
-#include <grp.h>
-#include <netdb.h>
-#include <netinet/in.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-
-#include <pthread.h>
-
-#include "import/sql.h"
-
-#define MAX_FILES 100
-
-#define PORT 2024
-#define GATEWAY_IP "192.168.1.9"
-#define LOCAL_IP "127.0.0.1"
+#include "import/server_static.h"
 
 extern int errno;
 
@@ -37,9 +10,11 @@ typedef struct thData {
 static void *treat(void *);
 void raspunde(void *);
 
+sqlite3 *db;
+
 int main(int argc, char *argv[]) {
 
-    sqlite3 *db = openDatabase(DATABASE);
+    db = openDatabase(DATABASE);
 
     if (argc == 2) {
         initializeDatabase(db);
@@ -54,7 +29,7 @@ int main(int argc, char *argv[]) {
     int i = 0;
 
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("[server]Eroare la socket().\n");
+        perror("socket() error\n");
         return errno;
     }
 
@@ -69,25 +44,25 @@ int main(int argc, char *argv[]) {
     server.sin_addr.s_addr = inet_addr(GATEWAY_IP);
 
     if (bind(sd, (struct sockaddr *)&server, sizeof(struct sockaddr)) == -1) {
-        perror("[server]Eroare la bind().\n");
+        perror("[server] bind() error\n");
         return errno;
     }
 
     if (listen(sd, 2) == -1) {
-        perror("[server]Eroare la listen().\n");
+        perror("[server] listen() error\n");
         return errno;
     }
 
-    while (1) {
+    printf("Waiting to port %d...\n", PORT);
+    
+    for(;;) {
         int client;
         thData *td;
         int length = sizeof(from);
 
-        printf("[server]Asteptam la portul %d...\n", PORT);
-        fflush(stdout);
 
         if ((client = accept(sd, (struct sockaddr *)&from, &length)) < 0) {
-            perror("[server]Eroare la accept().\n");
+            perror("[server] accept() error\n");
             continue;
         }
 
@@ -105,9 +80,11 @@ int main(int argc, char *argv[]) {
 static void *treat(void *arg) {
     struct thData tdL;
     tdL = *((struct thData *)arg);
-    printf("[thread]- %d - Asteptam mesajul...\n", tdL.idThread);
-    fflush(stdout);
+
+    printf("[thread] - %d - Waiting for the request...\n", tdL.idThread);
+
     pthread_detach(pthread_self());
+
     raspunde((struct thData *)arg);
 
     close((intptr_t)arg);
@@ -115,23 +92,40 @@ static void *treat(void *arg) {
 };
 
 void raspunde(void *arg) {
-    int nr, i = 0;
     struct thData tdL;
     tdL = *((struct thData *)arg);
-    if (read(tdL.cl, &nr, sizeof(int)) <= 0) {
-        printf("[Thread %d]\n", tdL.idThread);
-        perror("Eroare la read() de la client.\n");
-    }
 
-    printf("[Thread %d]Mesajul a fost receptionat...%d\n", tdL.idThread, nr);
+    int sd = tdL.cl;
 
-    nr++;
-    printf("[Thread %d]Trimitem mesajul inapoi...%d\n", tdL.idThread, nr);
+    int REQUEST_TYPE;
 
-    if (write(tdL.cl, &nr, sizeof(int)) <= 0) {
+    if (read(sd, &REQUEST_TYPE, sizeof(int)) <= 0) {
         printf("[Thread %d] ", tdL.idThread);
-        perror("[Thread]Eroare la write() catre client.\n");
+        perror("read() error\n");
     }
-    else
-        printf("[Thread %d]Mesajul a fost trasmis cu succes.\n", tdL.idThread);
+
+    switch (REQUEST_TYPE) {
+    case LOGIN: ;
+        
+        User u;
+
+        if (read(sd, &u, sizeof(User)) == -1) {
+            perror("[server] " READ_ERROR);
+            return;
+        }
+
+        u = getUserByEmail(db, u.email); // test, need to verify if the user enter the email correctly
+
+        if (write(sd, &u, sizeof(User)) == -1) {
+            perror("[server] " WRITE_ERROR);
+            return;
+        }
+
+        break;
+    
+    default:
+        break;
+    }
+
+    printf("Request end\n\n");
 }

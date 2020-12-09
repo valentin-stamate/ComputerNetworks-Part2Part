@@ -1,4 +1,4 @@
-#include "stdio.h"
+#include <stdio.h>
 #include "sql.h"
 #include <string.h>
 #include <stdlib.h>
@@ -133,12 +133,4 @@ void getUserFiles(sqlite3* db, User* user, File* files, int* nFile) {
         strcpy(files[i].name, result[i][2]);
         strcpy(files[i].path, result[i][3]);
     }
-}
-
-void showUser(User* u) {
-    printf("%d %s %s %s %s\n", u->userID, u->firstname, u->lastname, u->email, u->password);
-}
-
-void showFile(File* f) {
-    printf("%d, %d, %s, %s\n", f->fileID, f->userID, f->name, f->path);
 }

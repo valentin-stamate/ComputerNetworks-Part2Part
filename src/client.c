@@ -1,41 +1,19 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <limits.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <dirent.h>
-#include <pwd.h>
-#include <grp.h>
-#include <netdb.h>
-#include <netinet/in.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-
-#include <pthread.h>
-
-#define MAX_FILES 100
-
-#define GATEWAY_IP "192.168.1.9"
-#define PORT 2024
+#include "import/client_static.h"
 
 extern int errno;
+
+int isLogged = 0;
+
+User *user;
+File user_files[100];
 
 int main(int argc, char *argv[]) {
 
     int sd;			
     struct sockaddr_in server;	
-  		
-    int nr=0;
-    char buf[10];
 
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror ("Eroare la socket().\n");
+        perror (SOCKET_ERROR);
         return errno;
     }
 
@@ -45,29 +23,81 @@ int main(int argc, char *argv[]) {
     
     
     if (connect (sd, (struct sockaddr *) &server,sizeof (struct sockaddr)) == -1) {
-        perror ("[client]Eroare la connect().\n");
+        perror (CONNECT_ERROR);
         return errno;
     }
 
-    printf ("[client]Introduceti un numar: ");
-    fflush (stdout);
-    read (0, buf, sizeof(buf));
-    nr=atoi(buf);
+    user = (User*) malloc(sizeof(User));
+
+    // 
+    showWelcomeMessage();
+
+    char rawCommand[100];
+
+    repeat:
+
+    printf(CLI " ");
+    fgets(rawCommand, sizeof(rawCommand), stdin);
+    rawCommand[(int)strlen(rawCommand) - 1] = '\0'; // removing newline
+
+    trimString(rawCommand, ' ');
+
+    char command[10][100];
+    int blocks = 0;
+
+    getBlocks(command, rawCommand, &blocks);
+
+    int COMMAND_TYPE = process(command, blocks);
+
+    switch (COMMAND_TYPE) {
+    case LOGIN:
+        printf("Loggin in...\n");
+
+        sendLoginCredentials(sd, command, user);
+
+        showUser(user);
+
+        isLogged = (user->userID != -1);
     
-    printf("[client] Am citit %d\n",nr);
+        if (isLogged == 1) {
+            printf("Logged in. Welcome " BGRN "%s.\n\n" reset, user->firstname);
+        } else {
+            printf("Invalid credentials\n\n");
+        }
 
-    if (write (sd,&nr,sizeof(int)) <= 0){
-        perror ("[client]Eroare la write() spre server.\n");
-        return errno;
-    }
 
-    if (read (sd, &nr,sizeof(int)) < 0) {
-        perror ("[client]Eroare la read() de la server.\n");
-        return errno;
-    }
+        break;
     
-    printf ("[client]Mesajul primit este: %d\n", nr);
+    case LOGOUT:
+        printf("Logged out\n\n");
+        break;
 
+    default:
+        printf("Invalid command! To see all commands press " BWHT "help.\n\n" reset);
+        break;
+    }
+
+    // int nr=0;
+    // char buf[10];
+
+    // printf ("[client]Introduceti un numar: ");
+    // fflush (stdout);
+    // read (0, buf, sizeof(buf));
+    // nr=atoi(buf);
+    
+    // printf("[client] Am citit %d\n",nr);
+
+    // if (write (sd,&nr,sizeof(int)) <= 0){
+    //     perror (WRITE_TO_SERVER_ERROR);
+    //     return errno;
+    // }
+
+    // if (read (sd, &nr,sizeof(int)) < 0) {
+    //     perror (READ_TO_SERVER_ERROR);
+    //     return errno;
+    // }
+
+    goto repeat;
 
     close (sd);
 
