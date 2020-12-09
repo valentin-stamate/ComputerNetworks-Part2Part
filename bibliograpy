@@ -27,3 +27,17 @@ https://stackoverflow.com/questions/11637701/sqlite-c-interface-get-single-value
 
 Foreign Keys
 https://stackoverflow.com/questions/5890250/on-delete-cascade-in-sqlite3
+
+Exemplu de Server TCP
+https://profs.info.uaic.ro/~computernetworks/files/NetEx/S12/ServerConcThread/servTcpConcTh2.c
+
+Exemplu de Client TCP
+https://profs.info.uaic.ro/~computernetworks/files/NetEx/S12/ServerConcThread/cliTcpNr.c
+
+Convertirea unei adrese IP de tip text
+https://www.gta.ufrj.br/ensino/eel878/sockets/sockaddr_inman.html
+
+Connect local server to router ip
+https://www.oreilly.com/library/view/linux-network-administrators/0596005482/ch04.html
+
+Functii din tema 1
