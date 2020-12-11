@@ -1,4 +1,4 @@
-#include "sql_low.h"
+#include "server_low.h"
 #include "../sqlite/sqlite3.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,14 +27,17 @@ void SQLExecute(sqlite3* db, char* sql) {
     }
 }
 
-void SQLInsert(sqlite3* db, char* sql) {
+int SQLInsert(sqlite3* db, char* sql) {
     
     char *error;
     int res = sqlite3_exec(db, sql, NULL, NULL, &error);
 
     if (res != SQLITE_OK) {
         printf("%s\n", error);
+        return -1;
     }
+
+    return 0;
 }
 
 

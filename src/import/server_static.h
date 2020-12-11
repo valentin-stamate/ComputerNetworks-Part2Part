@@ -21,7 +21,7 @@
 
 #include <pthread.h>
 
-#include "sql/sql.h"
+#include "server/server_functions.h"
 #include "user_commands.h"
 #include "errors.h"
 

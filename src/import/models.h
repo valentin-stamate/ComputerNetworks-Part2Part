@@ -4,8 +4,7 @@
 
 struct User {
     int userID;
-    char firstname[255];
-    char lastname[255];
+    char username[255];
     char email[255];
     char password[255];
 };

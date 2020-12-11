@@ -1,15 +1,16 @@
 #include <stdio.h>
-#include "sql.h"
+#include "server_functions.h"
 #include <string.h>
 #include <stdlib.h>
+#include "../sqlite/sqlite3.h"
 
 void initializeDatabase(sqlite3* db) {
-    SQLExecute(db, "CREATE TABLE users( id INTEGER PRIMARY KEY, firstname VARCHAR(255) NOT NULL, lastname VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, password TEXT NOT NULL);");
+    SQLExecute(db, "CREATE TABLE users( id INTEGER PRIMARY KEY, username VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, password TEXT NOT NULL);");
     SQLExecute(db, "CREATE TABLE files(id INTEGER PRIMARY KEY, user_id INTEGER, name VARCHAR(255) NOT NULL, path TEXT, FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE NO ACTION);");
 
-    User u = {1, "Valentin", "Stamate", "stamatevalentin125@gmail.com", "23456789"};
+    User u = {1, "ValentinSt", "stamatevalentin125@gmail.com", "123456789"};
 
-    insertUser(db, &u);
+    addUser(db, &u);
 
     File f = {0, 0, "fisier.txt", "desktop/fisier.txt"}; 
     addFileToUser(db, &f, &u);
@@ -21,17 +22,21 @@ void initializeDatabase(sqlite3* db) {
 
 }
 
-void insertUser(sqlite3* db, User* user) {
+void addUser(sqlite3* db, User* user) {
     char sql[1250];
 
-    sprintf(sql, "INSERT INTO users(firstname, lastname, email, password) VALUES ('%s', '%s', '%s', '%s');", user->firstname, user->lastname, user->email, user->password);
+    sprintf(sql, "INSERT INTO users(username, email, password) VALUES ('%s', '%s', '%s');", user->username, user->email, user->password);
 
-    SQLInsert(db, sql);
+    int r = SQLInsert(db, sql);
+    
+    if (r == -1) {
+        user->userID = -1;
+        return;
+    }
 
     User u = getUserByEmail(db, user->email);
 
-    user->userID = u.userID;
-
+    (*user) = u;
 }
 
 void showAllUsers(sqlite3* db) {
@@ -68,12 +73,23 @@ User getUserByEmail(sqlite3* db, char* email) {
 
     
     u.userID = atoi(result[0][0]);
-    strcpy(u.firstname, result[0][1]);
-    strcpy(u.lastname, result[0][2]);
-    strcpy(u.email, result[0][3]);
-    strcpy(u.password, result[0][4]);
+    strcpy(u.username, result[0][1]);
+    strcpy(u.email, result[0][2]);
+    strcpy(u.password, result[0][3]);
 
     return u;
+}
+
+void verifyUser(sqlite3* db, User* u) {
+
+    User fu = getUserByEmail(db, u->email);
+
+    u->userID = -1;
+
+    if (strcmp(u->password, fu.password) == 0) {
+        (*u) = fu;
+        return;
+    }
 }
 
 void addFileToUser(sqlite3* db, File* file, User* user) {

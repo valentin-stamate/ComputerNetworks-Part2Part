@@ -2,7 +2,7 @@
 #include "models.h"
 
 void showUser(User* u) {
-    printf("%d %s %s %s %s\n", u->userID, u->firstname, u->lastname, u->email, u->password);
+    printf("%d %s %s %s\n", u->userID, u->username, u->email, u->password);
 }
 
 void showFile(File* f) {

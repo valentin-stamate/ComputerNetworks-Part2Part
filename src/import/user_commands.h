@@ -4,5 +4,6 @@
 
 #define HELP 0
 #define LOGIN 1
-#define LOGOUT 2
-#define QUIT 3
+#define SIGNUP 2
+#define LOGOUT 3
+#define QUIT 4

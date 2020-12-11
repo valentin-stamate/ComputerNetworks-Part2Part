@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     int nr;
     int sd;
     int pid;
-    pthread_t th[100];
+    pthread_t th[200];
     int i = 0;
 
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -104,17 +104,18 @@ void raspunde(void *arg) {
         perror("read() error\n");
     }
 
+    User u;
+
     switch (REQUEST_TYPE) {
     case LOGIN: ;
-        
-        User u;
+        printf("Login Request\n");
 
         if (read(sd, &u, sizeof(User)) == -1) {
             perror("[server] " READ_ERROR);
             return;
         }
 
-        u = getUserByEmail(db, u.email); // test, need to verify if the user enter the email correctly
+        verifyUser(db, &u);
 
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
@@ -122,7 +123,22 @@ void raspunde(void *arg) {
         }
 
         break;
-    
+    case SIGNUP: ;
+        printf("Signup Request\n");
+
+        if (read(sd, &u, sizeof(User)) == -1) {
+            perror("[server] " READ_ERROR);
+            return;
+        }
+
+        addUser(db, &u);
+
+        if (write(sd, &u, sizeof(User)) == -1) {
+            perror("[server] " WRITE_ERROR);
+            return;
+        }
+
+        break;
     default:
         break;
     }
