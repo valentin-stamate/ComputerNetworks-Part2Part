@@ -1,16 +1,24 @@
 #include "import/server_static.h"
 
 extern int errno;
+#define MAX_THREAD 200
 
-typedef struct thData {
+struct thData {
     int idThread;
-    int cl;    
-} thData;
+    int sdCl;
+
+    int user_id;    
+};
+
+typedef struct thData thData;
 
 static void *treat(void *);
 void raspunde(void *);
 
 sqlite3 *db;
+
+thData *tdDat;
+int i = 0;
 
 int main(int argc, char *argv[]) {
 
@@ -25,8 +33,10 @@ int main(int argc, char *argv[]) {
     int nr;
     int sd;
     int pid;
-    pthread_t th[200];
-    int i = 0;
+    
+    pthread_t th[MAX_THREAD];
+    tdDat = (thData*)malloc((sizeof(thData) * MAX_THREAD));
+
 
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("socket() error\n");
@@ -55,22 +65,23 @@ int main(int argc, char *argv[]) {
 
     printf("Waiting to port %d...\n", PORT);
     
+
     for(;;) {
         int client;
-        thData *td;
-        int length = sizeof(from);
 
+        int length = sizeof(from);
 
         if ((client = accept(sd, (struct sockaddr *)&from, &length)) < 0) {
             perror("[server] accept() error\n");
             continue;
         }
 
-        td = (struct thData *)malloc(sizeof(struct thData));
-        td->idThread = i++;
-        td->cl = client;
+        tdDat[i].idThread = i;
+        tdDat[i].sdCl = client;
 
-        pthread_create(&th[i], NULL, &treat, td);
+        pthread_create(&th[i], NULL, &treat, tdDat + i);
+    
+        i++;
     }
 
     closeDatabase(db);
@@ -78,29 +89,31 @@ int main(int argc, char *argv[]) {
 }
 
 static void *treat(void *arg) {
-    struct thData tdL;
-    tdL = *((struct thData *)arg);
+    thData *tdL;
+    tdL = (thData *)arg;
 
-    printf("[thread] - %d - Waiting for the request...\n", tdL.idThread);
+    printf("[thread] - %d - Waiting for the request...\n", tdL->idThread);
 
     pthread_detach(pthread_self());
 
-    raspunde((struct thData *)arg);
+    raspunde((thData *)arg);
 
     close((intptr_t)arg);
     return (NULL);
 };
 
 void raspunde(void *arg) {
-    struct thData tdL;
-    tdL = *((struct thData *)arg);
+    thData *tdL;
+    tdL = (struct thData *)arg;
 
-    int sd = tdL.cl;
+    int sd = tdL->sdCl;
 
     int REQUEST_TYPE;
 
+    repeat:
+
     if (read(sd, &REQUEST_TYPE, sizeof(int)) <= 0) {
-        printf("[Thread %d] ", tdL.idThread);
+        printf("[Thread %d] ", tdL->idThread);
         perror("read() error\n");
     }
 
@@ -116,6 +129,8 @@ void raspunde(void *arg) {
         }
 
         verifyUser(db, &u);
+
+        tdL->user_id = u.userID;
 
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
@@ -139,9 +154,16 @@ void raspunde(void *arg) {
         }
 
         break;
+    case LOGOUT: ;
+        printf("User %d disconected\n", tdL->user_id);
+        tdL->user_id = -1;
+        break;
+
     default:
         break;
     }
 
     printf("Request end\n\n");
+
+    goto repeat;
 }

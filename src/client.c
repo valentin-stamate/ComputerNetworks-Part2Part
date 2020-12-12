@@ -27,10 +27,6 @@ int main(int argc, char *argv[]) {
 
     system("clear");
 
-    repeat:
-
-    showWelcomeMessage(user);
-    
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
         perror (SOCKET_ERROR);
         return errno;
@@ -41,6 +37,10 @@ int main(int argc, char *argv[]) {
         return errno;
     }
 
+    repeat:
+    
+    showWelcomeMessage(user);
+    
     sprintf(SIGGNED_AS, "%s", "");
     if (isLogged == 1) {
         sprintf(SIGGNED_AS, BBLU "[" BGRN "%s" BBLU "]" reset, user->username);
@@ -87,7 +87,15 @@ int main(int argc, char *argv[]) {
         break;
     case LOGOUT:
         printf("Logged out\n\n");
+
         isLogged = 0;
+        user->userID = -1;
+
+        int r = LOGOUT;
+        if (write(sd, &r, sizeof(int)) == -1) {
+            printf("[LOGOUT] " WRITE_ERROR "\n");
+        }
+
         break;
 
     default:
@@ -117,8 +125,9 @@ int main(int argc, char *argv[]) {
 
     system("clear");
 
-    close (sd);
     goto repeat;
+
+    close (sd);
 
     return 0;
 }

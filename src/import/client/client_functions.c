@@ -87,10 +87,11 @@ void sendLoginCredentials(int sd, char command[10][100], User* u) {
         return;
     }
     
-    printf("Email: ");
+    printf("Email: " BYEL);
     getLine(u->email, 255);
-    printf("Password: ");
+    printf(reset "Password: " BBLK);
     getLine(u->password, 255);
+    printf(reset);
 
     if (write(sd, u, sizeof(User)) == -1) {
         printf("[LOGIN 2] " WRITE_ERROR "\n");
