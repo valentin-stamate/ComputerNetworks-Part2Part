@@ -135,7 +135,44 @@ void getLine(char* buffer, int n) {
     buffer[(int)strlen(buffer) - 1] = '\0'; // removing newline
 }
 
+void showNotifications(char notification[10][100], int n) {
+    for (int i = 0; i < n; i++) {
+        showNotification(notification[i]);
+    }
+}
 
+void showNotification(char* s) {
+    int cut = 50 - 6;
+    int nRows = strlen(s + 1) / cut + 1;
+
+    char rowText[10][50];
+
+    for (int i = 0; i < nRows - 1; i++) {
+        strcpy(rowText[i], "");
+
+        strncat(rowText[i], s + i * cut, cut);
+
+    }
+
+    sprintf(rowText[nRows - 1], "%s", s + (nRows - 1) * cut);
+
+    printf("==================================================\n");
+    for (int i = 0; i < nRows - 1; i++) {
+        printf("=  %s  =\n", rowText[i]);
+    }
+
+    printf("=  %s", rowText[nRows - 1]);
+    int r = strlen(rowText[nRows - 1]);
+    r = cut - r + 2;
+
+    for (int i = 1; i <= r; i++) {
+        printf(" ");
+    }
+    printf("=\n");
+    printf("==================================================\n\n");
+
+
+}
 
 void printColors() {
     printf(BLK "Lorem ipsum dolor sit amet\n" reset);

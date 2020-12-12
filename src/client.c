@@ -7,11 +7,13 @@ int isLogged = 0;
 User *user;
 File user_files[100];
 
+char notifications[10][100];
+int nNotif = 0;
+
 int main(int argc, char *argv[]) {
 
     int sd;			
-    struct sockaddr_in server;	
-
+    struct sockaddr_in server;
 
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr(GATEWAY_IP);
@@ -40,7 +42,8 @@ int main(int argc, char *argv[]) {
     repeat:
     
     showWelcomeMessage(user);
-    
+    showNotifications(notifications, nNotif);
+
     sprintf(SIGGNED_AS, "%s", "");
     if (isLogged == 1) {
         sprintf(SIGGNED_AS, BBLU "[" BGRN "%s" BBLU "]" reset, user->username);
@@ -90,6 +93,7 @@ int main(int argc, char *argv[]) {
 
         isLogged = 0;
         user->userID = -1;
+        nNotif = 0;
 
         int r = LOGOUT;
         if (write(sd, &r, sizeof(int)) == -1) {

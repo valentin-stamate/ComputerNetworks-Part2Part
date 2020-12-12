@@ -16,4 +16,7 @@ void getUserCredentials(int, User*);
 
 void getLine(char*, int);
 
+void showNotifications(char[10][100], int);
+void showNotification(char*);
+
 void printColors();
