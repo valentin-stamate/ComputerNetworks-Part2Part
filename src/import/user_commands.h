@@ -7,3 +7,5 @@
 #define SIGNUP 2
 #define LOGOUT 3
 #define QUIT 4
+#define GET_USERS 5
+#define REQUEST_CONNECTION 6

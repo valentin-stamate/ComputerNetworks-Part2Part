@@ -7,7 +7,9 @@ struct thData {
     int idThread;
     int sdCl;
 
-    int user_id;    
+    int user_id;
+    char user_email[255];
+    int isActive;
 };
 
 typedef struct thData thData;
@@ -18,7 +20,7 @@ void raspunde(void *);
 sqlite3 *db;
 
 thData *tdDat;
-int i = 0;
+int nTdData = 0;
 
 int main(int argc, char *argv[]) {
 
@@ -76,12 +78,12 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        tdDat[i].idThread = i;
-        tdDat[i].sdCl = client;
+        tdDat[nTdData].idThread = nTdData;
+        tdDat[nTdData].sdCl = client;
 
-        pthread_create(&th[i], NULL, &treat, tdDat + i);
+        pthread_create(&th[nTdData], NULL, &treat, tdDat + nTdData);
     
-        i++;
+        nTdData++;
     }
 
     closeDatabase(db);
@@ -118,6 +120,8 @@ void raspunde(void *arg) {
     }
 
     User u;
+    User active_users[MAX_THREAD];
+    int nActiveUsers;
 
     switch (REQUEST_TYPE) {
     case LOGIN: ;
@@ -131,6 +135,11 @@ void raspunde(void *arg) {
         verifyUser(db, &u);
 
         tdL->user_id = u.userID;
+
+        if (u.userID != -1) {
+            sprintf(tdL->user_email, "%s", u.email);
+            tdL->isActive = 1;
+        }
 
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
@@ -148,6 +157,11 @@ void raspunde(void *arg) {
 
         addUser(db, &u);
 
+        if (u.userID != -1) {
+            sprintf(tdL->user_email, "%s", u.email);
+            tdL->isActive = 1;
+        }
+
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
             return;
@@ -156,7 +170,33 @@ void raspunde(void *arg) {
         break;
     case LOGOUT: ;
         printf("User %d disconected\n", tdL->user_id);
-        tdL->user_id = -1;
+        tdL->isActive = 0;
+        break;
+
+    case GET_USERS: ;
+
+        nActiveUsers = 0;
+
+        for (int i = 0; i < nTdData; i++) {
+            if (tdDat[i].user_id != -1) {
+                User t = getUserByEmail(db, tdDat[i].user_email);
+                t.isActive = tdDat[i].isActive;
+                active_users[nActiveUsers++] = t;
+            }
+        }
+
+        if (write(sd, &nActiveUsers, sizeof(int)) == -1) {
+            printf("[SHOW_ACTIVE_USERS]" WRITE_ERROR);
+            return;
+        }
+
+        for (int i = 0; i < nActiveUsers; i++) {
+            if (write(sd, active_users + i, sizeof(User)) == -1) {
+                printf("[SHOW_ACTIVE_USERS]" WRITE_ERROR);
+                return;
+            }
+        }
+
         break;
 
     default:

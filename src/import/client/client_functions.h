@@ -19,4 +19,9 @@ void getLine(char*, int);
 void showNotifications(char[10][100], int);
 void showNotification(char*);
 
+void pushNotification(char*, char[10][100], int*);
+void popNotification(char[10][100], int*);
+
+void getUsers(int, char[10][100], int*);
+
 void printColors();

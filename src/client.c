@@ -102,30 +102,16 @@ int main(int argc, char *argv[]) {
 
         break;
 
+    case GET_USERS: ;
+
+        getUsers(sd, notifications, &nNotif);
+
+        break;
+
     default:
         printf("Invalid command! To see all commands press " BWHT "help.\n\n" reset);
         break;
     }
-
-    // int nr=0;
-    // char buf[10];
-
-    // printf ("[client]Introduceti un numar: ");
-    // fflush (stdout);
-    // read (0, buf, sizeof(buf));
-    // nr=atoi(buf);
-    
-    // printf("[client] Am citit %d\n",nr);
-
-    // if (write (sd,&nr,sizeof(int)) <= 0){
-    //     perror (WRITE_TO_SERVER_ERROR);
-    //     return errno;
-    // }
-
-    // if (read (sd, &nr,sizeof(int)) < 0) {
-    //     perror (READ_TO_SERVER_ERROR);
-    //     return errno;
-    // }
 
     system("clear");
 

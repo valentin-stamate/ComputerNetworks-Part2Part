@@ -7,6 +7,8 @@ struct User {
     char username[255];
     char email[255];
     char password[255];
+
+    int isActive;
 };
 struct File {
     int fileID;

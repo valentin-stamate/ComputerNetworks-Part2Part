@@ -71,6 +71,10 @@ int process(char command[10][100], int blocks) {
         return LOGOUT;
     }
 
+    if ( blocks == 2 && strcmp(command[0], "show") == 0 && strcmp(command[1], "users") == 0 ) {
+        return GET_USERS;
+    }
+
     if (blocks == 1 && strcmp(command[0], "quit") == 0) {
         printf("Process killed\n");
         exit(1);
@@ -130,6 +134,52 @@ void getUserCredentials(int sd, User* u) {
 
 }
 
+void getUsers(int sd, char notification[10][100], int* n) {
+    int type = GET_USERS;
+    if (write(sd, &type, sizeof(int)) == -1) {
+        printf("[LOGIN 1] " WRITE_ERROR "\n");
+        return;
+    }
+
+    int nUsers;
+
+    while ((*n) > 0) {
+        popNotification(notification, n);
+    }
+
+    read(sd, &nUsers, sizeof(int));
+
+    for (int i = 0; i < nUsers; i++) {
+        User u;
+        read(sd, &u, sizeof(User));
+
+        char* line = malloc(100);
+
+        if (u.isActive == 1) {
+            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BGRN "active" reset, u.username, u.userID);
+        } else {
+             sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BYEL "offline" reset, u.username, u.userID);
+        }
+
+        pushNotification(line, notification, n);
+
+        free(line);
+    }
+
+    char* line = malloc(100);
+
+    if (nUsers != 0) {
+        sprintf(line, "To connect with a user type the command connect to <user_id>");
+
+        pushNotification(line, notification, n);
+
+    } else {
+        sprintf(line, "No active users found");
+
+        pushNotification(line, notification, n);
+    }
+}
+
 void getLine(char* buffer, int n) {
     fgets(buffer, n, stdin);
     buffer[(int)strlen(buffer) - 1] = '\0'; // removing newline
@@ -142,10 +192,10 @@ void showNotifications(char notification[10][100], int n) {
 }
 
 void showNotification(char* s) {
-    int cut = 50 - 6;
+    int cut = 75 - 6;
     int nRows = strlen(s + 1) / cut + 1;
 
-    char rowText[10][50];
+    char rowText[10][75];
 
     for (int i = 0; i < nRows - 1; i++) {
         strcpy(rowText[i], "");
@@ -156,7 +206,7 @@ void showNotification(char* s) {
 
     sprintf(rowText[nRows - 1], "%s", s + (nRows - 1) * cut);
 
-    printf("==================================================\n");
+    printf("===========================================================================\n");
     for (int i = 0; i < nRows - 1; i++) {
         printf("=  %s  =\n", rowText[i]);
     }
@@ -169,9 +219,21 @@ void showNotification(char* s) {
         printf(" ");
     }
     printf("=\n");
-    printf("==================================================\n\n");
+    printf("===========================================================================\n");
 
 
+}
+
+void pushNotification(char* newNot, char notifications[10][100], int* n) {
+    sprintf(notifications[(*n)++], "%s", newNot);
+}
+
+void popNotification(char notifications[10][100], int* n) {
+    for (int i = 0; i < 9; i++) {
+        sprintf(notifications[i], "%s", notifications[i + 1]);
+    }
+    sprintf(notifications[9], "%s", "");
+    (*n) = (*n) - 1;
 }
 
 void printColors() {
