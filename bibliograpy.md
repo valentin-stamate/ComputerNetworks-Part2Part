@@ -40,7 +40,7 @@ https://www.gta.ufrj.br/ensino/eel878/sockets/sockaddr_inman.html
 Connect local server to router ip
 https://www.oreilly.com/library/view/linux-network-administrators/0596005482/ch04.html
 
-Functii din tema 1
+Functii din tema 1(MyFind, getBlocks, MyStat, showFileStatus)
 
 ANSI color coldes
 https://gist.github.com/RabaDabaDoba/145049536f815903c79944599c6f952a

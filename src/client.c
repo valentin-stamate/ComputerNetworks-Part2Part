@@ -7,7 +7,7 @@ int isLogged = 0;
 User *user;
 File user_files[100];
 
-char notifications[10][100];
+char notifications[MAX_NOTIF][100];
 int nNotif = 0;
 
 int main(int argc, char *argv[]) {
@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
     printf("%s" CLI " ", SIGGNED_AS);
     getLine(rawCommand, sizeof(rawCommand));
 
+    clearNotifications(notifications, &nNotif);
+
     trimString(rawCommand, ' ');
 
     char command[10][100];
@@ -82,9 +84,9 @@ int main(int argc, char *argv[]) {
         isLogged = (user->userID != -1);
 
         if (isLogged == 1) {
-            printf("Successfully signed in. Welcome " BCYN "%s.\n\n" reset, user->username);
+            // printf("Successfully signed in. Welcome " BCYN "%s.\n\n" reset, user->username);
         } else {
-            printf("Invalid credentials. User may already exist.\n\n");
+            // printf("Invalid credentials. User may already exist.\n\n");
         }
 
         break;
@@ -104,10 +106,32 @@ int main(int argc, char *argv[]) {
 
     case GET_USERS: ;
 
+        if (isLogged == 0) {
+            // TODO display message
+            break;
+        }
+
         getUsers(sd, notifications, &nNotif);
 
         break;
 
+    case SHOW_FILES: ;
+
+        if (isLogged == 0) {
+            // TODO display message
+            break;
+        }
+
+        char files[100][100];
+        int n = 0;
+
+        MyFind(FILES_LOCATION, files, &n);
+
+        for (int i = 0; i < n; i++) {
+            pushNotification(files[i], notifications, &nNotif);
+        }
+
+        break;
     default:
         printf("Invalid command! To see all commands press " BWHT "help.\n\n" reset);
         break;

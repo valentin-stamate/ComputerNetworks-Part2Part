@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include "client_functions.h"
 #include "../ANSI-color-codes.h"
@@ -75,6 +77,10 @@ int process(char command[10][100], int blocks) {
         return GET_USERS;
     }
 
+    if (blocks == 2 && strcmp(command[0], "show") == 0 && strcmp(command[1], "files") == 0) {
+        return SHOW_FILES;
+    }
+
     if (blocks == 1 && strcmp(command[0], "quit") == 0) {
         printf("Process killed\n");
         exit(1);
@@ -83,7 +89,7 @@ int process(char command[10][100], int blocks) {
     return ERROR;
 }
 
-void sendLoginCredentials(int sd, char command[10][100], User* u) {
+void sendLoginCredentials(int sd, char command[MAX_NOTIF][100], User* u) {
     
     int type = LOGIN;
     if (write(sd, &type, sizeof(int)) == -1) {
@@ -134,7 +140,7 @@ void getUserCredentials(int sd, User* u) {
 
 }
 
-void getUsers(int sd, char notification[10][100], int* n) {
+void getUsers(int sd, char notification[MAX_NOTIF][100], int* n) {
     int type = GET_USERS;
     if (write(sd, &type, sizeof(int)) == -1) {
         printf("[LOGIN 1] " WRITE_ERROR "\n");
@@ -142,10 +148,6 @@ void getUsers(int sd, char notification[10][100], int* n) {
     }
 
     int nUsers;
-
-    while ((*n) > 0) {
-        popNotification(notification, n);
-    }
 
     read(sd, &nUsers, sizeof(int));
 
@@ -189,6 +191,9 @@ void showNotifications(char notification[10][100], int n) {
     for (int i = 0; i < n; i++) {
         showNotification(notification[i]);
     }
+    if (n != 0) {
+        printf("===========================================================================\n");
+    }
 }
 
 void showNotification(char* s) {
@@ -206,22 +211,26 @@ void showNotification(char* s) {
 
     sprintf(rowText[nRows - 1], "%s", s + (nRows - 1) * cut);
 
-    printf("===========================================================================\n");
+    printf("===========================================================================\n\n");
     for (int i = 0; i < nRows - 1; i++) {
-        printf("=  %s  =\n", rowText[i]);
+        printf("  %s  \n", rowText[i]);
     }
 
-    printf("=  %s", rowText[nRows - 1]);
+    printf("  %s", rowText[nRows - 1]);
     int r = strlen(rowText[nRows - 1]);
     r = cut - r + 2;
 
     for (int i = 1; i <= r; i++) {
         printf(" ");
     }
-    printf("=\n");
-    printf("===========================================================================\n");
+    printf("\n");
 
+}
 
+void clearNotifications(char notification[MAX_NOTIF][100], int* n) {
+    while ((*n) > 0) {
+        popNotification(notification, n);
+    }
 }
 
 void pushNotification(char* newNot, char notifications[10][100], int* n) {
@@ -234,6 +243,88 @@ void popNotification(char notifications[10][100], int* n) {
     }
     sprintf(notifications[9], "%s", "");
     (*n) = (*n) - 1;
+}
+
+void showFileStatus(struct stat st) {
+    char perm[10];
+    strcpy(perm, "");
+    strcat(perm, "---------");
+    if( S_IRUSR & st.st_mode )  perm[0]='r';
+    if( S_IWUSR & st.st_mode )  perm[1]='w';
+    if( S_IXUSR & st.st_mode )  perm[2]='x';
+    if( S_IRGRP & st.st_mode )  perm[3]='r';
+    if( S_IWGRP & st.st_mode )  perm[4]='w';
+    if( S_IXGRP & st.st_mode )  perm[5]='x';
+    if( S_IROTH & st.st_mode )  perm[6]='r';
+    if( S_IWOTH & st.st_mode )  perm[7]='w';
+    if( S_IXOTH & st.st_mode )  perm[8]='x';
+
+    if (strcmp(perm, "---------") == 0) {
+        printf("File doesn't exist\n");
+        return;
+    }
+
+    printf("\nFile status:\n"); 
+    printf("Total size: %d\n", (int)st.st_size);
+    printf("Tile of last access: %d\n", (int)st.st_atim.tv_sec);
+    printf("Time of last modification: %d\n", (int)st.st_mtim.tv_sec);
+    printf("ID of device containing file: %d\n", (int)st.st_dev);
+
+    printf("File permissions: %s\n", perm);
+
+    printf("\n");
+}
+
+struct stat MyStat(char *path, int* status) {
+    struct stat st;
+
+    int acc = access(path, F_OK);
+
+    if (acc == -1) {
+        perror(ACCESS_ERROR);
+    }
+
+    (*status) = acc == 0;
+
+    if ( stat(path, &st) == -1 ) {
+        perror(STAT_ERROR);
+    }
+
+    return st;
+}
+
+void MyFind(char *dirname, char result[100][100], int *lineNumber) {
+    DIR *dd = opendir(dirname);
+
+    struct dirent *de;
+    
+    if (dd != NULL) {
+        de = readdir(dd);
+    } else {
+        return;
+    }
+
+    while (de != NULL) {
+
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) {
+            de = readdir(dd);
+
+            continue;
+        }
+
+        char name[PATH_MAX];
+        sprintf(name, "%s/%s", dirname, de->d_name);
+
+        if (de->d_type == 8) {
+            sprintf(result[(*lineNumber)++], "%s", name);
+        } else {
+            MyFind(name, result, lineNumber);
+        }
+
+        de = readdir(dd);
+    }
+
+    closedir(dd);
 }
 
 void printColors() {

@@ -22,6 +22,8 @@
 
 #include <pthread.h>
 
+#define MAX_NOTIF 50
+
 #include "user_commands.h"
 #include "client/client_functions.h"
 #include "ANSI-color-codes.h"
@@ -30,6 +32,7 @@
 #include "errors.h"
 
 #define CLI "$"
+#define FILES_LOCATION "./files"
 
 // CONFIGURATION
 #define MAX_FILES 100
