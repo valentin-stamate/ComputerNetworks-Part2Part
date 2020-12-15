@@ -81,6 +81,14 @@ int process(char command[10][100], int blocks) {
         return SHOW_FILES;
     }
 
+    if (blocks == 3 && strcmp(command[0], "get") == 0 && strcmp(command[1], "file") == 0) {
+        return GET_FILE;
+    }
+
+    if (blocks == 2 && strcmp(command[0], "send") == 0 && strcmp(command[1], "file") == 0) {
+        return PUT_FILE;
+    }
+
     if (blocks == 1 && strcmp(command[0], "quit") == 0) {
         printf("Process killed\n");
         exit(1);

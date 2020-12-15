@@ -10,12 +10,14 @@ struct thData {
     int user_id;
     char user_email[255];
     int isActive;
+    int sdW;
+    int sdR;
 };
 
 typedef struct thData thData;
 
 static void *treat(void *);
-void raspunde(void *);
+void process_request(void *);
 
 sqlite3 *db;
 
@@ -78,6 +80,39 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+
+        int type;
+        // get the communication type 0 = normal, 1 = read file, 2 = write file
+        if (read(client, &type, sizeof(int)) == -1) {
+            perror(READ_ERROR);
+        }
+
+        printf("%d\n", type);
+
+        if (type == 1 || type == 2) {
+            User u;
+            if (read(client, &u, sizeof(User)) == -1) {
+                perror(READ_ERROR);
+            }
+
+            for (int i = 0; i < nTdData; i++) {
+                if (tdDat[i].user_id == u.userID) {
+                    if (type == 1) {
+                        printf("Connected read\n");
+                        tdDat[i].sdR = client;
+                        break;
+                    }
+                    if (type == 2) {
+                        printf("Connected write\n");
+                        tdDat[i].sdW = client;
+                        break;
+                    }
+                }
+            }
+
+            continue;
+        }
+
         tdDat[nTdData].idThread = nTdData;
         tdDat[nTdData].sdCl = client;
 
@@ -98,13 +133,13 @@ static void *treat(void *arg) {
 
     pthread_detach(pthread_self());
 
-    raspunde((thData *)arg);
+    process_request((thData *)arg);
 
     close((intptr_t)arg);
     return (NULL);
 };
 
-void raspunde(void *arg) {
+void process_request(void *arg) {
     thData *tdL;
     tdL = (struct thData *)arg;
 
@@ -117,6 +152,7 @@ void raspunde(void *arg) {
     if (read(sd, &REQUEST_TYPE, sizeof(int)) <= 0) {
         printf("[Thread %d] ", tdL->idThread);
         perror("read() error\n");
+        return;
     }
 
     User u;
@@ -196,6 +232,32 @@ void raspunde(void *arg) {
                 return;
             }
         }
+
+        break;
+
+    case GET_FILE: ;
+
+        RequestedFile rf;
+
+        read(sd, &rf, sizeof(RequestedFile));
+
+        int sdW, sdR;
+
+        for (int i = 0; i < nTdData; i++) {
+            if (tdDat[i].user_id == rf.user_id) {
+                sdR = tdDat[i].sdR;
+                sdW = tdDat[i].sdW;
+                break;
+            }
+        }
+        
+        write(sdR, &rf, sizeof(RequestedFile));
+        
+        char buffer[4096];
+
+        read(sdW, buffer, 4096);
+
+        write(sd, buffer, 4096);
 
         break;
 

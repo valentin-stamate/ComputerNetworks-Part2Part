@@ -17,8 +17,15 @@ struct File {
     char path[1024];
 };
 
+struct RequestedFile {
+    int user_id;
+    char filePath[1024];
+};
+
+
 typedef struct User User;
 typedef struct File File;
+typedef struct RequestedFile RequestedFile;
 
 void showUser(User*);
 

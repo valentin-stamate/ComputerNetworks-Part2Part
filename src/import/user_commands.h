@@ -10,3 +10,5 @@
 #define GET_USERS 5
 #define REQUEST_CONNECTION 6
 #define SHOW_FILES 7
+#define GET_FILE 8
+#define PUT_FILE 9
