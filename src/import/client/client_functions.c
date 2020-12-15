@@ -188,6 +188,8 @@ void getUsers(int sd, char notification[MAX_NOTIF][100], int* n) {
 
         pushNotification(line, notification, n);
     }
+
+    free(line);
 }
 
 void getLine(char* buffer, int n) {
@@ -200,7 +202,7 @@ void showNotifications(char notification[10][100], int n) {
         showNotification(notification[i]);
     }
     if (n != 0) {
-        printf("===========================================================================\n");
+        printf("===========================================================================\n\n");
     }
 }
 
@@ -219,7 +221,7 @@ void showNotification(char* s) {
 
     sprintf(rowText[nRows - 1], "%s", s + (nRows - 1) * cut);
 
-    printf("===========================================================================\n\n");
+    printf("===========================================================================\n");
     for (int i = 0; i < nRows - 1; i++) {
         printf("  %s  \n", rowText[i]);
     }

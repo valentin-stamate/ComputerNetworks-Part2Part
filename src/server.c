@@ -10,8 +10,7 @@ struct thData {
     int user_id;
     char user_email[255];
     int isActive;
-    int sdW;
-    int sdR;
+    int sdTr;
 };
 
 typedef struct thData thData;
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
 
         printf("%d\n", type);
 
-        if (type == 1 || type == 2) {
+        if (type == 1) {
             User u;
             if (read(client, &u, sizeof(User)) == -1) {
                 perror(READ_ERROR);
@@ -98,13 +97,8 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < nTdData; i++) {
                 if (tdDat[i].user_id == u.userID) {
                     if (type == 1) {
-                        printf("Connected read\n");
-                        tdDat[i].sdR = client;
-                        break;
-                    }
-                    if (type == 2) {
-                        printf("Connected write\n");
-                        tdDat[i].sdW = client;
+                        printf("Connected transfer socket\n");
+                        tdDat[i].sdTr = client;
                         break;
                     }
                 }
@@ -241,21 +235,20 @@ void process_request(void *arg) {
 
         read(sd, &rf, sizeof(RequestedFile));
 
-        int sdW, sdR;
+        int sdTr;
 
         for (int i = 0; i < nTdData; i++) {
             if (tdDat[i].user_id == rf.user_id) {
-                sdR = tdDat[i].sdR;
-                sdW = tdDat[i].sdW;
+                sdTr = tdDat[i].sdTr;
                 break;
             }
         }
         
-        write(sdR, &rf, sizeof(RequestedFile));
+        write(sdTr, &rf, sizeof(RequestedFile));
         
         char buffer[4096];
 
-        read(sdW, buffer, 4096);
+        read(sdTr, buffer, 4096);
 
         write(sd, buffer, 4096);
 
