@@ -15,7 +15,16 @@ void showWelcomeMessage(User* u) {
     if (u->userID != -1) {
         sprintf(user, "%s ", u->username);
     }
-    printf(BBLU "Welcome " BGRN "%s" BBLU "to Part2Part.\nIn order to run rommands log in fist using login\n\n" reset, user);
+    printf(BBLU "Welcome " BGRN "%s" BBLU "to Part2Part.\n", user);
+
+    if (u->userID == -1) {
+        printf("In order to run commands log in fist.\n\n" reset);
+    } else {
+        printf("To see all the commands type " BWHT "help" BBLU ".\n\n" reset);
+    }
+
+    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB " login " reset " " "\n\n");
+
 }
 
 void trimString(char* s, char c) {
@@ -36,7 +45,7 @@ void trimString(char* s, char c) {
 
 }
 
-void getBlocks(char destination[10][100], char *source, int *len) {
+void getBlocks(char destination[10][255], char *source, int *len) {
     char *p = strchr(source, ' ');
 
     *len = 0;
@@ -56,7 +65,7 @@ void getBlocks(char destination[10][100], char *source, int *len) {
 
 }
 
-int process(char command[10][100], int blocks) {
+int process(char command[10][255], int blocks) {
     if ( blocks == 1 && strcmp(command[0], "help" ) == 0) {
         return HELP;
     }
@@ -71,6 +80,10 @@ int process(char command[10][100], int blocks) {
 
     if ( blocks == 1 && strcmp(command[0], "logout") == 0) {
         return LOGOUT;
+    }
+
+    if (blocks == 2 && strcmp(command[0], "clear") == 0 && strcmp(command[1], "notifications") == 0) {
+        return CLEAR_NOTIFICATIONS;
     }
 
     if ( blocks == 2 && strcmp(command[0], "show") == 0 && strcmp(command[1], "users") == 0 ) {
@@ -97,7 +110,7 @@ int process(char command[10][100], int blocks) {
     return ERROR;
 }
 
-void sendLoginCredentials(int sd, char command[MAX_NOTIF][100], User* u) {
+void sendLoginCredentials(int sd, char command[10][255], User* u) {
     
     int type = LOGIN;
     if (write(sd, &type, sizeof(int)) == -1) {
@@ -148,7 +161,7 @@ void getUserCredentials(int sd, User* u) {
 
 }
 
-void getUsers(int sd, char notification[MAX_NOTIF][100], int* n) {
+void getUsers(int sd, char notification[MAX_NOTIF][500], int* n) {
     int type = GET_USERS;
     if (write(sd, &type, sizeof(int)) == -1) {
         printf("[LOGIN 1] " WRITE_ERROR "\n");
@@ -163,7 +176,7 @@ void getUsers(int sd, char notification[MAX_NOTIF][100], int* n) {
         User u;
         read(sd, &u, sizeof(User));
 
-        char* line = malloc(100);
+        char* line = malloc(500);
 
         if (u.isActive == 1) {
             sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BGRN "active" reset, u.username, u.userID);
@@ -176,7 +189,7 @@ void getUsers(int sd, char notification[MAX_NOTIF][100], int* n) {
         free(line);
     }
 
-    char* line = malloc(100);
+    char* line = malloc(500);
 
     if (nUsers != 0) {
         sprintf(line, "To connect with a user type the command connect to <user_id>");
@@ -197,7 +210,7 @@ void getLine(char* buffer, int n) {
     buffer[(int)strlen(buffer) - 1] = '\0'; // removing newline
 }
 
-void showNotifications(char notification[10][100], int n) {
+void showNotifications(char notification[MAX_NOTIF][500], int n) {
     for (int i = 0; i < n; i++) {
         showNotification(notification[i]);
     }
@@ -237,17 +250,17 @@ void showNotification(char* s) {
 
 }
 
-void clearNotifications(char notification[MAX_NOTIF][100], int* n) {
+void clearNotifications(char notification[MAX_NOTIF][500], int* n) {
     while ((*n) > 0) {
         popNotification(notification, n);
     }
 }
 
-void pushNotification(char* newNot, char notifications[10][100], int* n) {
+void pushNotification(char* newNot, char notifications[MAX_NOTIF][500], int* n) {
     sprintf(notifications[(*n)++], "%s", newNot);
 }
 
-void popNotification(char notifications[10][100], int* n) {
+void popNotification(char notifications[MAX_NOTIF][500], int* n) {
     for (int i = 0; i < 9; i++) {
         sprintf(notifications[i], "%s", notifications[i + 1]);
     }

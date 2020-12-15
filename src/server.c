@@ -86,8 +86,6 @@ int main(int argc, char *argv[]) {
             perror(READ_ERROR);
         }
 
-        printf("%d\n", type);
-
         if (type == 1) {
             User u;
             if (read(client, &u, sizeof(User)) == -1) {
@@ -233,7 +231,10 @@ void process_request(void *arg) {
 
         RequestedFile rf;
 
-        read(sd, &rf, sizeof(RequestedFile));
+        if (read(sd, &rf, sizeof(RequestedFile)) == -1) {
+            perror("[TRANSFER]" READ_ERROR);
+            return;
+        }
 
         int sdTr;
 
@@ -244,13 +245,22 @@ void process_request(void *arg) {
             }
         }
         
-        write(sdTr, &rf, sizeof(RequestedFile));
+        if (write(sdTr, &rf, sizeof(RequestedFile)) == -1) {
+            perror("[TRANSFER]" WRITE_ERROR);
+            return;
+        }
         
         char buffer[4096];
 
-        read(sdTr, buffer, 4096);
+        if (read(sdTr, buffer, 4096) == -1) {
+            perror("[TRANSFER]" READ_ERROR);
+            return;
+        }
 
-        write(sd, buffer, 4096);
+        if (write(sd, buffer, 4096) == -1) {
+            perror("[TRANSFER]" WRITE_ERROR);
+            return;
+        }
 
         break;
 

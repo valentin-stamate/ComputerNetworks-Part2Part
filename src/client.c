@@ -6,7 +6,7 @@ int isLogged = 0;
 User *user;
 File user_files[100];
 
-char notifications[MAX_NOTIF][100];
+char notifications[MAX_NOTIF][500];
 int nNotif = 0;
 
 static void *treat(void*);
@@ -23,6 +23,7 @@ struct sockaddr_in server;
 int uploading = 0;
 
 void initializeTransferDescriptors(int, int*);
+RequestedFile rf;
 
 int main(int argc, char *argv[]) {
 
@@ -30,16 +31,12 @@ int main(int argc, char *argv[]) {
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr(GATEWAY_IP);
     server.sin_port = htons(PORT);
-    
-    // 
 
     user = (User*) malloc(sizeof(User));
     user->userID = -1;
 
     char rawCommand[100];
     char SIGGNED_AS[300] = "";
-
-    system("clear");
 
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
         perror (SOCKET_ERROR);
@@ -62,8 +59,10 @@ int main(int argc, char *argv[]) {
     repeat:
     
     system("clear");
+
     showWelcomeMessage(user);
     showNotifications(notifications, nNotif);
+    clearNotifications(notifications, &nNotif);
 
     sprintf(SIGGNED_AS, "%s", "");
     if (isLogged == 1) {
@@ -76,7 +75,7 @@ int main(int argc, char *argv[]) {
 
     trimString(rawCommand, ' ');
 
-    char command[10][100];
+    char command[10][255];
     int blocks = 0;
 
     getBlocks(command, rawCommand, &blocks);
@@ -84,25 +83,26 @@ int main(int argc, char *argv[]) {
     int COMMAND_TYPE = process(command, blocks);
     
     char buffer[4096];
-    
+    char tempLine[500];
+
     switch (COMMAND_TYPE) {
     case LOGIN:
-        clearNotifications(notifications, &nNotif);
         
         sendLoginCredentials(sd, command, user);
 
         isLogged = (user->userID != -1);
     
         if (isLogged == 1) {
-            // printf("Logged in. Welcome " BGRN "%s.\n\n" reset, user->username);
+            sprintf(tempLine, "Logged in. Welcome " BGRN "%s." reset, user->username);
+            pushNotification(tempLine, notifications, &nNotif);
+            
             initializeTransferDescriptors(sd, &sdFileTransfer);
         } else {
-            // printf("Invalid credentials\n\n");
+            pushNotification(BRED "Invalid credentials" reset, notifications, &nNotif);
         }
 
         break;
     case SIGNUP:
-        clearNotifications(notifications, &nNotif);
 
         getUserCredentials(sd, user);
 
@@ -110,16 +110,20 @@ int main(int argc, char *argv[]) {
 
         if (isLogged == 1) {
             initializeTransferDescriptors(sd, &sdFileTransfer);
-            // printf("Successfully signed in. Welcome " BCYN "%s.\n\n" reset, user->username);
+            
+            sprintf(tempLine, BWHT "Successfully signed in. Welcome " BCYN "%s." reset, user->username);
+            pushNotification(tempLine, notifications, &nNotif);
         } else {
-            // printf("Invalid credentials. User may already exist.\n\n");
+            sprintf(tempLine, BWHT "Invalid credentials. User may already exist." reset);
+            pushNotification(tempLine, notifications, &nNotif);
         }
 
         break;
-    case LOGOUT:
+    case CLEAR_NOTIFICATIONS: ;
         clearNotifications(notifications, &nNotif);
-
-        // printf("Logged out\n\n");
+        break;
+    case LOGOUT:
+        pushNotification(BWHT "Logged out." reset, notifications, &nNotif);
 
         isLogged = 0;
         user->userID = -1;
@@ -133,10 +137,9 @@ int main(int argc, char *argv[]) {
         break;
 
     case GET_USERS: ;
-        clearNotifications(notifications, &nNotif);
 
         if (isLogged == 0) {
-            // TODO display message
+            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
             break;
         }
 
@@ -145,10 +148,9 @@ int main(int argc, char *argv[]) {
         break;
 
     case SHOW_FILES: ;
-        clearNotifications(notifications, &nNotif);
 
         if (isLogged == 0) {
-            // TODO display message
+            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
             break;
         }
 
@@ -168,21 +170,31 @@ int main(int argc, char *argv[]) {
         printf("Getting file. Waiting for the client to confirm the tranfer.\n");
 
         RequestedFile rf;
+        // for testing purposes
         rf.user_id = 1;
+        sprintf(rf.username, "ValentinSt");
         sprintf(rf.filePath, "./files/file1.txt");
 
         int type = GET_FILE;
-        write(sd, &type, sizeof(int));
+        if (write(sd, &type, sizeof(int)) == -1) {
+            perror("[GETTING FILE]" WRITE_ERROR);
+        }
 
-        
-        write(sd, &rf, sizeof(RequestedFile));
+        if (write(sd, &rf, sizeof(RequestedFile)) == -1) {
+            perror("[GETTING FILE]" WRITE_ERROR);
+        }
         
         // suppose the files have maximum 4kb
-        read(sd, buffer, 4096);
+        if (read(sd, buffer, 4096) == -1) {
+            perror("[GETTING FILE]" READ_ERROR);
+        }
 
         printf("Buffer is %s\n", buffer);
 
-        scanf("%d", &type);
+        sprintf(tempLine, BGRN "File transfered succesfully from " BWHT "%s" BGRN "." reset, rf.username);
+        pushNotification(tempLine, notifications, &nNotif);
+
+        sleep(5);// for testing purposes
 
         break;
 
@@ -196,14 +208,13 @@ int main(int argc, char *argv[]) {
             sleep(1);
         }
 
-        printf("Done\n");
-        int fds;
-        scanf("%d", &fds);
+        sprintf(tempLine, BGRN "File transfered succesfully to " BWHT "%s" BGRN "." reset, rf.username);
+        pushNotification(tempLine, notifications, &nNotif);
 
         break;
 
     default:
-        printf("Invalid command! To see all commands press " BWHT "help.\n\n" reset);
+        pushNotification("Invalid command! To see all commands press " BWHT "help." reset, notifications, &nNotif);
         break;
     }
 
@@ -226,7 +237,6 @@ static void *treat(void *arg) {
     return (NULL);
 };
 
-RequestedFile rf;
 void process_file_transfer(int *arg) {
     
     repeat:
@@ -235,13 +245,20 @@ void process_file_transfer(int *arg) {
         sleep(1);
     }
 
-    read(sdFileTransfer, &rf, sizeof(RequestedFile));
+    if (read(sdFileTransfer, &rf, sizeof(RequestedFile)) == -1) {
+        perror("[PR FILE]" READ_ERROR);
+    }
 
     int fd = open(rf.filePath, O_RDONLY);
+    
     char buffer[4096];
-    read(fd, buffer, 4096);
+    if (read(fd, buffer, 4096) == -1) {
+        perror("[READING FILE]" READ_ERROR);
+    }
 
-    write(sdFileTransfer, buffer, 4096);
+    if (write(sdFileTransfer, buffer, 4096) == -1) {
+        perror("[WRITING BUFFER]" WRITE_ERROR);
+    }
 
     uploading = 0;
 

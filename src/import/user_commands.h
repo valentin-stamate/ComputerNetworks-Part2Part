@@ -12,3 +12,4 @@
 #define SHOW_FILES 7
 #define GET_FILE 8
 #define PUT_FILE 9
+#define CLEAR_NOTIFICATIONS 10

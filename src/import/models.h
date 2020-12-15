@@ -19,6 +19,7 @@ struct File {
 
 struct RequestedFile {
     int user_id;
+    char username[255];
     char filePath[1024];
 };
 
