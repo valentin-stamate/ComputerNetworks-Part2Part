@@ -94,6 +94,10 @@ int process(char command[10][255], int blocks) {
         return CLEAR_NOTIFICATIONS;
     }
 
+    if (blocks == 3 && strcmp(command[0], "show") == 0 && strcmp(command[1], "connected") == 0 && strcmp(command[2], "users") == 0) {
+        return SHOW_CONNECTED_USERS;
+    }
+
     if ( blocks == 2 && strcmp(command[0], "show") == 0 && strcmp(command[1], "users") == 0 ) {
         return GET_USERS;
     }
@@ -229,12 +233,12 @@ void showNotifications(char notification[MAX_NOTIF][500], int n) {
         showNotification(notification[i]);
     }
     if (n != 0) {
-        printf("===========================================================================\n\n");
+        printf("===================================================================================================\n\n");
     }
 }
 
 void showNotification(char* s) {
-    int cut = 75 - 6;
+    int cut = 100 - 6;
     int nRows = strlen(s + 1) / cut + 1;
 
     char rowText[10][75];
@@ -248,7 +252,7 @@ void showNotification(char* s) {
 
     sprintf(rowText[nRows - 1], "%s", s + (nRows - 1) * cut);
 
-    printf("===========================================================================\n");
+    printf("===================================================================================================\n");
     for (int i = 0; i < nRows - 1; i++) {
         printf("  %s  \n", rowText[i]);
     }

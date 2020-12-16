@@ -259,24 +259,50 @@ void process_request(void *arg) {
         }
         
         char buffer[4096];
+        int bytes;
 
-        if (read(sdTr, buffer, 4096) == -1) {
-            perror("[TRANSFER]" READ_ERROR);
-            return;
+        while (1) {
+            // get bytes
+            if (read(sdTr, &bytes, sizeof(int)) == -1) {
+                perror("[TRANSFER]" READ_ERROR);
+                return;
+            }
+            // sent to user bytes lenght
+            if (write(sd, &bytes, sizeof(int)) == -1) {
+                perror("[TRANSFER]" WRITE_ERROR);
+                return;
+            }
+
+            if (bytes == 0) {
+                break;
+            }
+
+            // read the buffer
+            if (read(sdTr, buffer, bytes) == -1) {
+                perror("[TRANSFER]" READ_ERROR);
+                return;
+            }
+
+            // send to user the buffer
+            if (write(sd, buffer, bytes) == -1) {
+                perror("[TRANSFER]" WRITE_ERROR);
+                return;
+            }
+
         }
 
-        if (write(sd, buffer, 4096) == -1) {
-            perror("[TRANSFER]" WRITE_ERROR);
-            return;
-        }
+
 
         break;
 
     case SEARCH_USER_FILES: ;
-        // TODO -1
+ 
         SearchFile sf;
 
-        read(sd, &sf, sizeof(SearchFile));
+        if (read(sd, &sf, sizeof(SearchFile)) == -1) {
+            perror("[SEARCH USER FILES]" READ_ERROR);
+            return;
+        }
 
         int sdSr;
 
@@ -287,17 +313,33 @@ void process_request(void *arg) {
             }
         }
 
-        write(sdSr, &sf, sizeof(SearchFile));
+        if (write(sdSr, &sf, sizeof(SearchFile)) == -1) {
+            perror("[SEARCH USER FILES]" WRITE_ERROR);
+            return;
+        }
 
         int nFiles;
 
-        read(sdSr, &nFiles, sizeof(int));
-        write(sd, &nFiles, sizeof(int));
+        if (read(sdSr, &nFiles, sizeof(int)) == -1) {
+            perror("[SEARCH USER FILES]" READ_ERROR);
+            return;
+        }
+
+        if (write(sd, &nFiles, sizeof(int)) == -1) {
+            perror("[SEARCH USER FILES]" WRITE_ERROR);
+            return;
+        }
 
         for (int i = 0; i < nFiles; i++) {
             File f;
-            read(sdSr, &f, sizeof(File));
-            write(sd, &f, sizeof(File));
+            if (read(sdSr, &f, sizeof(File)) == -1) {
+                perror("[SEARCH USER FILES]" READ_ERROR);
+                return;
+            }
+            if (write(sd, &f, sizeof(File)) == -1) {
+                perror("[SEARCH USER FILES]" WRITE_ERROR);
+                return;
+            }
         }
 
         break;

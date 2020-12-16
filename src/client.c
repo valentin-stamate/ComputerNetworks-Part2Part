@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     int COMMAND_TYPE = process(command, blocks);
     
-    char buffer[4096];
+    unsigned char buffer[4096];
     char tempLine[500];
     int type;
     switch (COMMAND_TYPE) {
@@ -153,7 +153,24 @@ int main(int argc, char *argv[]) {
         }
 
         break;
+    
+    case SHOW_CONNECTED_USERS: ;
 
+        if (isLogged == 0) {
+            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
+            break;
+        }
+
+        if (ncUsers == 0) {
+            pushNotification(BWHT "You don't have user connections", notifications, &nNotif);
+        }
+
+        for (int i = 0; i < ncUsers; i++) {
+            sprintf(tempLine, BWHT "%s" reset, cUsers[i].username);
+            pushNotification(tempLine, notifications, &nNotif);
+        }
+
+        break;
     case GET_USERS: ;
 
         if (isLogged == 0) {
@@ -216,36 +233,34 @@ int main(int argc, char *argv[]) {
             pushNotification(BWHT "No users found to search files" reset, notifications, &nNotif);
             break;
         }
-
+        // TODO -1
         printf("Waiting for the user to accept\n");        
 
         sprintf(sf.params, "%s", command[2]);
         sf.user_id = u_id;
-        // TODO -1
+        
 
         type = SEARCH_USER_FILES;
         write(sd, &type, sizeof(int));
 
         write(sd, &sf, sizeof(SearchFile));
 
-        int nr_files;
+        read(sd, &n_ouf, sizeof(int));
 
-        read(sd, &nr_files, sizeof(int));
-
-        if (nr_files == 0) {
+        if (n_ouf == 0) {
             printf("No files found\n");
+            break;
         }
 
-        for (int i = 0; i < nr_files; i++) {
-            File f;
+        for (int i = 0; i < n_ouf; i++) {
 
-            read(sd, &f, sizeof(File));
+            read(sd, other_user_files + i, sizeof(File));
 
-            printf("%s\n", f.path);
-        
+            sprintf(tempLine, BWHT "Filename: " BMAG "%s" BWHT " with id %d" reset, other_user_files[i].name, i);
+            pushNotification(tempLine, notifications, &nNotif);
         }
 
-        scanf("%d", &nr_files);
+        pushNotification( WHTB "The command to get a file is " BBLU "search [file_id] [search_params]" reset, notifications, &nNotif);
 
         break;
 
@@ -257,33 +272,42 @@ int main(int argc, char *argv[]) {
         while (searching == 1) {
             sleep(1);
         }
-
+        // TODO put a notification
         break;
 
     case GET_FILE: ;
 
         printf("Getting file. Waiting for the client to confirm the tranfer.\n");
 
-        // for testing purposes
-        rf.user_id = 1;
-        sprintf(rf.username, "%s", "ValentinSt");
-        sprintf(rf.fileName, "%s", "file1.txt");
-        sprintf(rf.filePath, "%s", "./files/file1.txt");
+        int selected_file = atoi(command[2]);
 
+        if (n_ouf == 0) {
+            pushNotification(BWHT "Select search for files first." reset, notifications, &nNotif);
+            break;
+        }
+
+        if (selected_file >= n_ouf) {
+            pushNotification(BWHT "Select a valid file_id" reset, notifications, &nNotif);
+            break;
+        }
+
+        rf.user_id = sf.user_id; // the user id from the last search
+        sprintf(rf.username, "%s", "");
+        sprintf(rf.fileName, "%s", other_user_files[selected_file].name);
+        sprintf(rf.filePath, "%s", other_user_files[selected_file].path);
+        
         type = GET_FILE;
         if (write(sd, &type, sizeof(int)) == -1) {
             perror("[GETTING FILE]" WRITE_ERROR);
+            return 0;
         }
 
         if (write(sd, &rf, sizeof(RequestedFile)) == -1) {
             perror("[GETTING FILE]" WRITE_ERROR);
+            return 0;
         }
         
-        // suppose the files have maximum 4kb
-        if (read(sd, buffer, 4096) == -1) {
-            perror("[GETTING FILE]" READ_ERROR);
-        }
-
+        int bytes;
         mkdir("./downloads", 0777);
 
         char path[4096];
@@ -297,10 +321,27 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        if (write(fdFile, buffer, strlen(buffer)) == -1) {
-            perror("Error writing to file\n");
-            return 0;
+        while (1) {
+            if (read(sd, &bytes, sizeof(int)) == -1) {
+                perror("[GETTING FILE]" READ_ERROR);
+                return 0;
+            }
+            
+            if (bytes == 0) {
+                break;
+            }
+            // read chunks of 4kb
+            if (read(sd, buffer, bytes) == -1) {
+                perror("[GETTING FILE]" READ_ERROR);
+                return 0;
+            }
+
+            if (write(fdFile, buffer, bytes) == -1) {
+                perror("Error writing to file\n");
+                return 0;
+            }
         }
+
 
         sprintf(tempLine, BGRN "File transfered succesfully from " BWHT "%s" BGRN "." reset, rf.username);
         pushNotification(tempLine, notifications, &nNotif);
@@ -367,17 +408,31 @@ void process_file_transfer(int *arg) {
         return;
     }
 
-    char buffer[4096];
+    unsigned char buffer[4096];
 
-    if (read(fd, buffer, 4096) == -1) {
-        perror("[READING FILE]" READ_ERROR);
-        return;
+    while (1) {
+        int bytes = read(fd, buffer, 4096);
+
+        if (bytes == -1) {
+            perror("[READING FILE]" READ_ERROR);
+            return;
+        }
+
+        if (write(sdFt, &bytes, sizeof(int)) == -1) {
+            perror("[WRITING BUFFER]" WRITE_ERROR);
+            return;
+        }
+
+        if (bytes == 0) {    
+            break;
+        }
+
+        if (write(sdFt, buffer, bytes) == -1) {
+            perror("[WRITING BUFFER]" WRITE_ERROR);
+            return;
+        }
     }
 
-    if (write(sdFt, buffer, 4096) == -1) {
-        perror("[WRITING BUFFER]" WRITE_ERROR);
-        return;
-    }
 
     uploading = 0;
 
@@ -396,7 +451,7 @@ static void *treat_search(void *arg) {
 };
 
 void process_search(int *arg) {
-    // TODO -1
+    
     repeat:
 
     while (searching == 0) {
@@ -405,18 +460,26 @@ void process_search(int *arg) {
 
     SearchFile sf;
 
-    read(sdSr, &sf, sizeof(SearchFile));
+    if (read(sdSr, &sf, sizeof(SearchFile)) == -1) {
+        perror("[PROCESS SEARCH]" READ_ERROR);
+        return;
+    }
 
     int filesFound = 0;
     File files[MAX_FILES];
     
+    MyFind(FILES_LOCATION, files, &filesFound, NULL);
 
-    MyFind(FILES_LOCATION, files, &filesFound, NULL); // NULL -> search_params
-
-    write(sdSr, &filesFound, sizeof(int));
+    if (write(sdSr, &filesFound, sizeof(int)) == -1) {
+        perror("[PROCESS SEARCH]" WRITE_ERROR);
+        return;
+    }
 
     for (int i = 0; i < filesFound; i++) {
-        write(sdSr, files + i, sizeof(File));
+        if (write(sdSr, files + i, sizeof(File)) == -1) {
+            perror("[PROCESS SEARCH]" WRITE_ERROR);
+            return;
+        }
     }
 
     searching = 0;
