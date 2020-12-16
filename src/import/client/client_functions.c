@@ -66,20 +66,24 @@ void getBlocks(char destination[10][255], char *source, int *len) {
 }
 
 int process(char command[10][255], int blocks) {
-    if ( blocks == 1 && strcmp(command[0], "help" ) == 0) {
+    if (blocks == 1 && strcmp(command[0], "help") == 0) {
         return HELP;
     }
 
-    if ( blocks == 1 && strcmp(command[0], "login") == 0) {
+    if (blocks == 1 && strcmp(command[0], "login") == 0) {
         return LOGIN;
     }
 
-    if ( blocks == 1 && strcmp(command[0], "signup") == 0 ) {
+    if (blocks == 1 && strcmp(command[0], "signup") == 0) {
         return SIGNUP;
     }
 
-    if ( blocks == 1 && strcmp(command[0], "logout") == 0) {
+    if (blocks == 1 && strcmp(command[0], "logout") == 0) {
         return LOGOUT;
+    }
+
+    if (blocks == 2 && strcmp(command[0], "allow") == 0 && strcmp(command[1], "discovery") == 0) {
+        return ALLOW_DISCOVERY;
     }
 
     if (blocks == 3 && strcmp(command[0], "connect") == 0 && strcmp(command[1], "to") == 0) {
@@ -96,6 +100,10 @@ int process(char command[10][255], int blocks) {
 
     if (blocks == 2 && strcmp(command[0], "show") == 0 && strcmp(command[1], "files") == 0) {
         return SHOW_FILES;
+    }
+
+    if (blocks == 3 && strcmp(command[0], "search") == 0) {
+        return SEARCH_USER_FILES;
     }
 
     if (blocks == 3 && strcmp(command[0], "get") == 0 && strcmp(command[1], "file") == 0) {
@@ -322,7 +330,7 @@ struct stat MyStat(char *path, int* status) {
     return st;
 }
 
-void MyFind(char *dirname, char result[100][100], int *lineNumber) {
+void MyFind(char *dirname, File* files, int *n, char* search_param) {
     DIR *dd = opendir(dirname);
 
     struct dirent *de;
@@ -345,9 +353,11 @@ void MyFind(char *dirname, char result[100][100], int *lineNumber) {
         sprintf(name, "%s/%s", dirname, de->d_name);
 
         if (de->d_type == 8) {
-            sprintf(result[(*lineNumber)++], "%s", name);
+            sprintf(files[(*n)].path, "%s", name);
+            sprintf(files[(*n)].name, "%s", de->d_name);
+            (*n)++;
         } else {
-            MyFind(name, result, lineNumber);
+            MyFind(name, files, n, search_param);
         }
 
         de = readdir(dd);

@@ -11,8 +11,6 @@ struct User {
     int isActive;
 };
 struct File {
-    int fileID;
-    int userID;
     char name[255];
     char path[1024];
 };
@@ -24,10 +22,16 @@ struct RequestedFile {
     char filePath[1024];
 };
 
+struct SearchFile {
+    int user_id;
+    char params[255];
+};
+
 
 typedef struct User User;
 typedef struct File File;
 typedef struct RequestedFile RequestedFile;
+typedef struct SearchFile SearchFile;
 
 void showUser(User*);
 

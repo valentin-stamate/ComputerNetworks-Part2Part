@@ -4,7 +4,12 @@ extern int errno;
 int isLogged = 0;
 
 User *user;
-File user_files[100];
+
+File user_files[MAX_FILES];
+int n_uf = 0;
+
+File other_user_files[MAX_FILES];
+int n_ouf = 0;
 
 User aUsers[30];
 int naUsers = 0;
@@ -18,17 +23,22 @@ int nNotif = 0;
 static void *treat(void*);
 void process_file_transfer(int*);
 
+static void *treat_search(void*);
+void process_search(int*);
+
 int nCn = 0;
 
 int currentThread = 1;
 
-int sd, sdFileTransfer;
+int sd, sdFt, sdSr;
 struct sockaddr_in server;
 
 int uploading = 0;
+int searching = 0;
 
-void initializeTransferDescriptors(int, int*);
+void initializeTransferDescriptors(int, int*, int*);
 RequestedFile rf;
+SearchFile sf;
 
 int main(int argc, char *argv[]) {
 
@@ -59,7 +69,10 @@ int main(int argc, char *argv[]) {
     }
 
     pthread_t thF;
-    pthread_create(&thF, NULL, &treat, &sdFileTransfer);
+    pthread_create(&thF, NULL, &treat, &sdFt);
+
+    pthread_t thSr;
+    pthread_create(&thF, NULL, &treat_search, &sdSr);
 
     repeat:
     
@@ -89,7 +102,7 @@ int main(int argc, char *argv[]) {
     
     char buffer[4096];
     char tempLine[500];
-
+    int type;
     switch (COMMAND_TYPE) {
     case LOGIN:
         
@@ -101,7 +114,7 @@ int main(int argc, char *argv[]) {
             sprintf(tempLine, "Logged in. Welcome " BGRN "%s." reset, user->username);
             pushNotification(tempLine, notifications, &nNotif);
             
-            initializeTransferDescriptors(sd, &sdFileTransfer);
+            initializeTransferDescriptors(sd, &sdFt, &sdSr);
         } else {
             pushNotification(BRED "Invalid credentials" reset, notifications, &nNotif);
         }
@@ -114,7 +127,7 @@ int main(int argc, char *argv[]) {
         isLogged = (user->userID != -1);
 
         if (isLogged == 1) {
-            initializeTransferDescriptors(sd, &sdFileTransfer);
+            initializeTransferDescriptors(sd, &sdFt, &sdSr);
             
             sprintf(tempLine, BWHT "Successfully signed in. Welcome " BCYN "%s." reset, user->username);
             pushNotification(tempLine, notifications, &nNotif);
@@ -149,7 +162,6 @@ int main(int argc, char *argv[]) {
         }
 
         getUsers(sd, notifications, &nNotif, aUsers, &naUsers);
-        
     
         break;
     case CONNECT_TO: ;
@@ -182,17 +194,72 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        char files[100][100];
-        int n = 0;
+        n_uf = 0;
+        MyFind(FILES_LOCATION, user_files, &n_uf, NULL);
 
-        MyFind(FILES_LOCATION, files, &n);
-
-        for (int i = 0; i < n; i++) {
-            pushNotification(files[i], notifications, &nNotif);
+        for (int i = 0; i < n_uf; i++) {
+            pushNotification(user_files[i].path, notifications, &nNotif);
         }
 
         break;
     
+    case SEARCH_USER_FILES: ;
+
+        int u_id = atoi(command[1]);
+
+        int found = 0;
+        for (int i = 0; i < ncUsers; i++) {
+            found = found || u_id == cUsers[i].userID;
+        }
+
+        if (found == 0) {
+            pushNotification(BWHT "No users found to search files" reset, notifications, &nNotif);
+            break;
+        }
+
+        printf("Waiting for the user to accept\n");        
+
+        sprintf(sf.params, "%s", command[2]);
+        sf.user_id = u_id;
+        // TODO -1
+
+        type = SEARCH_USER_FILES;
+        write(sd, &type, sizeof(int));
+
+        write(sd, &sf, sizeof(SearchFile));
+
+        int nr_files;
+
+        read(sd, &nr_files, sizeof(int));
+
+        if (nr_files == 0) {
+            printf("No files found\n");
+        }
+
+        for (int i = 0; i < nr_files; i++) {
+            File f;
+
+            read(sd, &f, sizeof(File));
+
+            printf("%s\n", f.path);
+        
+        }
+
+        scanf("%d", &nr_files);
+
+        break;
+
+    case ALLOW_DISCOVERY: ;
+        printf("Waiting for the client to search a file...\n");
+        
+        searching = 1;
+
+        while (searching == 1) {
+            sleep(1);
+        }
+
+        break;
+
     case GET_FILE: ;
 
         printf("Getting file. Waiting for the client to confirm the tranfer.\n");
@@ -203,7 +270,7 @@ int main(int argc, char *argv[]) {
         sprintf(rf.fileName, "%s", "file1.txt");
         sprintf(rf.filePath, "%s", "./files/file1.txt");
 
-        int type = GET_FILE;
+        type = GET_FILE;
         if (write(sd, &type, sizeof(int)) == -1) {
             perror("[GETTING FILE]" WRITE_ERROR);
         }
@@ -289,7 +356,7 @@ void process_file_transfer(int *arg) {
         sleep(1);
     }
 
-    if (read(sdFileTransfer, &rf, sizeof(RequestedFile)) == -1) {
+    if (read(sdFt, &rf, sizeof(RequestedFile)) == -1) {
         perror("[PR FILE]" READ_ERROR);
     }
 
@@ -307,7 +374,7 @@ void process_file_transfer(int *arg) {
         return;
     }
 
-    if (write(sdFileTransfer, buffer, 4096) == -1) {
+    if (write(sdFt, buffer, 4096) == -1) {
         perror("[WRITING BUFFER]" WRITE_ERROR);
         return;
     }
@@ -317,11 +384,52 @@ void process_file_transfer(int *arg) {
     goto repeat;
 }
 
+static void *treat_search(void *arg) {
+    int *sd = (int*)arg;
+
+    pthread_detach(pthread_self());
+
+    process_search(sd);
+
+    close((intptr_t)arg);
+    return (NULL);
+};
+
+void process_search(int *arg) {
+    // TODO -1
+    repeat:
+
+    while (searching == 0) {
+        sleep(1);
+    }
+
+    SearchFile sf;
+
+    read(sdSr, &sf, sizeof(SearchFile));
+
+    int filesFound = 0;
+    File files[MAX_FILES];
+    
+
+    MyFind(FILES_LOCATION, files, &filesFound, NULL); // NULL -> search_params
+
+    write(sdSr, &filesFound, sizeof(int));
+
+    for (int i = 0; i < filesFound; i++) {
+        write(sdSr, files + i, sizeof(File));
+    }
+
+    searching = 0;
+    goto repeat;
+}
+
+
 struct sockaddr_in socket_file;
+struct sockaddr_in socket_search;
 
-void initializeTransferDescriptors(int sd, int* sdF) {
+void initializeTransferDescriptors(int sd, int* sdF, int *sdSr) {
 
-    int type = 1;
+    int type = CONNECT_TRANSFER;
 
     socket_file.sin_family = AF_INET;
     socket_file.sin_addr.s_addr = inet_addr(GATEWAY_IP);
@@ -339,6 +447,26 @@ void initializeTransferDescriptors(int sd, int* sdF) {
 
     write((*sdF), &type, sizeof(int));
     write((*sdF), user, sizeof(User));
+
+
+    type = CONNECT_SEARCH;
+
+    socket_search.sin_family = AF_INET;
+    socket_search.sin_addr.s_addr = inet_addr(GATEWAY_IP);
+    socket_search.sin_port = htons(PORT);
+
+    if (((*sdSr) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror (SOCKET_ERROR);
+        return;
+    }
+
+    if (connect ((*sdSr), (struct sockaddr *) &socket_search,sizeof (struct sockaddr)) == -1) {
+        perror (CONNECT_ERROR);
+        return;
+    }
+
+    write((*sdSr), &type, sizeof(int));
+    write((*sdSr), user, sizeof(User));
 
 }
 

@@ -26,7 +26,7 @@ void getUsers(int, char[MAX_NOTIF][500], int*, User*, int*);
 
 void showFileStatus(struct stat);
 struct stat MyStat(char*, int*);
-void MyFind(char*, char[100][100], int*);
+void MyFind(char*, File*, int*, char*);
 
 void clearNotifications(char [MAX_NOTIF][500], int*);
 

@@ -11,6 +11,7 @@ struct thData {
     char user_email[255];
     int isActive;
     int sdTr;
+    int sdSr;
 };
 
 typedef struct thData thData;
@@ -86,7 +87,7 @@ int main(int argc, char *argv[]) {
             perror(READ_ERROR);
         }
 
-        if (type == 1) {
+        if (type == CONNECT_TRANSFER || type == CONNECT_SEARCH) {
             User u;
             if (read(client, &u, sizeof(User)) == -1) {
                 perror(READ_ERROR);
@@ -94,9 +95,15 @@ int main(int argc, char *argv[]) {
 
             for (int i = 0; i < nTdData; i++) {
                 if (tdDat[i].user_id == u.userID) {
-                    if (type == 1) {
+                    if (type == CONNECT_TRANSFER) {
                         printf("Connected transfer socket\n");
                         tdDat[i].sdTr = client;
+                        break;
+                    }
+
+                    if (type == CONNECT_SEARCH) {
+                        printf("Connected search socket\n");
+                        tdDat[i].sdSr = client;
                         break;
                     }
                 }
@@ -261,6 +268,36 @@ void process_request(void *arg) {
         if (write(sd, buffer, 4096) == -1) {
             perror("[TRANSFER]" WRITE_ERROR);
             return;
+        }
+
+        break;
+
+    case SEARCH_USER_FILES: ;
+        // TODO -1
+        SearchFile sf;
+
+        read(sd, &sf, sizeof(SearchFile));
+
+        int sdSr;
+
+        for (int i = 0; i < nTdData; i++) {
+            if (tdDat[i].user_id == sf.user_id) {
+                sdSr = tdDat[i].sdSr;
+                break;
+            }
+        }
+
+        write(sdSr, &sf, sizeof(SearchFile));
+
+        int nFiles;
+
+        read(sdSr, &nFiles, sizeof(int));
+        write(sd, &nFiles, sizeof(int));
+
+        for (int i = 0; i < nFiles; i++) {
+            File f;
+            read(sdSr, &f, sizeof(File));
+            write(sd, &f, sizeof(File));
         }
 
         break;
