@@ -51,5 +51,8 @@ https://www.educative.io/edpresso/resolving-the-a-label-can-only-be-part-of-a-st
 Malloc
 https://www.tutorialspoint.com/c_standard_library/c_function_malloc.htm
 
+Creating a directory
+https://stackoverflow.com/questions/7430248/creating-a-new-directory-in-c
+
 
 

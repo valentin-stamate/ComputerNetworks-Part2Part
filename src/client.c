@@ -6,13 +6,18 @@ int isLogged = 0;
 User *user;
 File user_files[100];
 
+User aUsers[30];
+int naUsers = 0;
+
+User cUsers[30];
+int ncUsers = 0;
+
 char notifications[MAX_NOTIF][500];
 int nNotif = 0;
 
 static void *treat(void*);
 void process_file_transfer(int*);
 
-int connectedUsers[15];
 int nCn = 0;
 
 int currentThread = 1;
@@ -143,10 +148,33 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        getUsers(sd, notifications, &nNotif);
-
+        getUsers(sd, notifications, &nNotif, aUsers, &naUsers);
+        
+    
         break;
+    case CONNECT_TO: ;
+        if (isLogged == 0) {
+            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
+            break;
+        }
 
+        if (naUsers == 0) {
+            pushNotification(BWHT "Run the command get users first" reset, notifications, &nNotif);
+            break;
+        }
+
+        int connectToID = atoi(command[2]);
+        for (int i = 0; i < naUsers; i++) {
+            if (aUsers[i].userID == connectToID) {
+                cUsers[ncUsers++] = aUsers[i];
+                sprintf(tempLine, BWHT "Successfully connected to " BGRN "%s" BWHT "." reset, cUsers[ncUsers - 1].username);
+                pushNotification(tempLine, notifications, &nNotif);
+                pushNotification( BWHT "In order to transfer files you both have to be connected." reset, notifications, &nNotif);
+                break;
+            }
+        }
+        
+        break;
     case SHOW_FILES: ;
 
         if (isLogged == 0) {
@@ -169,11 +197,11 @@ int main(int argc, char *argv[]) {
 
         printf("Getting file. Waiting for the client to confirm the tranfer.\n");
 
-        RequestedFile rf;
         // for testing purposes
         rf.user_id = 1;
-        sprintf(rf.username, "ValentinSt");
-        sprintf(rf.filePath, "./files/file1.txt");
+        sprintf(rf.username, "%s", "ValentinSt");
+        sprintf(rf.fileName, "%s", "file1.txt");
+        sprintf(rf.filePath, "%s", "./files/file1.txt");
 
         int type = GET_FILE;
         if (write(sd, &type, sizeof(int)) == -1) {
@@ -189,7 +217,23 @@ int main(int argc, char *argv[]) {
             perror("[GETTING FILE]" READ_ERROR);
         }
 
-        printf("Buffer is %s\n", buffer);
+        mkdir("./downloads", 0777);
+
+        char path[4096];
+        sprintf(path, "%s/%s", "./downloads", rf.fileName);
+        printf("The path is %s\n", path);
+
+        int fdFile = open(path, O_WRONLY | O_CREAT, 0666);
+
+        if (fdFile == -1) {
+            perror("Error creating the file to download\n");
+            return 0;
+        }
+
+        if (write(fdFile, buffer, strlen(buffer)) == -1) {
+            perror("Error writing to file\n");
+            return 0;
+        }
 
         sprintf(tempLine, BGRN "File transfered succesfully from " BWHT "%s" BGRN "." reset, rf.username);
         pushNotification(tempLine, notifications, &nNotif);
@@ -208,7 +252,7 @@ int main(int argc, char *argv[]) {
             sleep(1);
         }
 
-        sprintf(tempLine, BGRN "File transfered succesfully to " BWHT "%s" BGRN "." reset, rf.username);
+        sprintf(tempLine, BGRN "File transfered succesfully." reset);
         pushNotification(tempLine, notifications, &nNotif);
 
         break;
@@ -251,13 +295,21 @@ void process_file_transfer(int *arg) {
 
     int fd = open(rf.filePath, O_RDONLY);
     
+    if (fd == -1) {
+        perror("[FILE ERROR]" OPEN_ERROR);
+        return;
+    }
+
     char buffer[4096];
+
     if (read(fd, buffer, 4096) == -1) {
         perror("[READING FILE]" READ_ERROR);
+        return;
     }
 
     if (write(sdFileTransfer, buffer, 4096) == -1) {
         perror("[WRITING BUFFER]" WRITE_ERROR);
+        return;
     }
 
     uploading = 0;

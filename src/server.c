@@ -206,8 +206,9 @@ void process_request(void *arg) {
         nActiveUsers = 0;
 
         for (int i = 0; i < nTdData; i++) {
-            if (tdDat[i].user_id != -1) {
+            if (tdDat[i].user_id != -1 && tdDat[i].user_id != tdL->user_id) {
                 User t = getUserByEmail(db, tdDat[i].user_email);
+                sprintf(t.password, "%s", "");
                 t.isActive = tdDat[i].isActive;
                 active_users[nActiveUsers++] = t;
             }

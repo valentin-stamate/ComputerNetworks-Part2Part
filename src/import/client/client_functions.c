@@ -23,7 +23,7 @@ void showWelcomeMessage(User* u) {
         printf("To see all the commands type " BWHT "help" BBLU ".\n\n" reset);
     }
 
-    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB " login " reset " " "\n\n");
+    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB BWHT " login " reset "\n\n");
 
 }
 
@@ -80,6 +80,10 @@ int process(char command[10][255], int blocks) {
 
     if ( blocks == 1 && strcmp(command[0], "logout") == 0) {
         return LOGOUT;
+    }
+
+    if (blocks == 3 && strcmp(command[0], "connect") == 0 && strcmp(command[1], "to") == 0) {
+        return CONNECT_TO;
     }
 
     if (blocks == 2 && strcmp(command[0], "clear") == 0 && strcmp(command[1], "notifications") == 0) {
@@ -161,27 +165,29 @@ void getUserCredentials(int sd, User* u) {
 
 }
 
-void getUsers(int sd, char notification[MAX_NOTIF][500], int* n) {
+void getUsers(int sd, char notification[MAX_NOTIF][500], int* n, User* users, int* nUsers) {
     int type = GET_USERS;
     if (write(sd, &type, sizeof(int)) == -1) {
         printf("[LOGIN 1] " WRITE_ERROR "\n");
         return;
     }
 
-    int nUsers;
+    if (read(sd, nUsers, sizeof(int)) == -1) {
+        perror("[GET USERS]" READ_ERROR);
+        return;
+    }
 
-    read(sd, &nUsers, sizeof(int));
-
-    for (int i = 0; i < nUsers; i++) {
-        User u;
-        read(sd, &u, sizeof(User));
+    for (int i = 0; i < *nUsers; i++) {
+        if (read(sd, users + i, sizeof(User)) == -1) {
+            perror("[GET USERS]" READ_ERROR);
+        }
 
         char* line = malloc(500);
 
-        if (u.isActive == 1) {
-            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BGRN "active" reset, u.username, u.userID);
+        if (users[i].isActive == 1) {
+            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BGRN "active" reset, users[i].username, users[i].userID);
         } else {
-             sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BYEL "offline" reset, u.username, u.userID);
+            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BYEL "offline" reset, users[i].username, users[i].userID);
         }
 
         pushNotification(line, notification, n);
@@ -191,7 +197,7 @@ void getUsers(int sd, char notification[MAX_NOTIF][500], int* n) {
 
     char* line = malloc(500);
 
-    if (nUsers != 0) {
+    if (*nUsers != 0) {
         sprintf(line, "To connect with a user type the command connect to <user_id>");
 
         pushNotification(line, notification, n);

@@ -13,3 +13,4 @@
 #define GET_FILE 8
 #define PUT_FILE 9
 #define CLEAR_NOTIFICATIONS 10
+#define CONNECT_TO 11

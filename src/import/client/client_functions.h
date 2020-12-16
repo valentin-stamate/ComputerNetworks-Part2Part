@@ -22,7 +22,7 @@ void showNotification(char*);
 void pushNotification(char*, char[MAX_NOTIF][500], int*);
 void popNotification(char[MAX_NOTIF][500], int*);
 
-void getUsers(int, char[MAX_NOTIF][500], int*);
+void getUsers(int, char[MAX_NOTIF][500], int*, User*, int*);
 
 void showFileStatus(struct stat);
 struct stat MyStat(char*, int*);
