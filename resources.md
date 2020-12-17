@@ -54,5 +54,11 @@ https://www.tutorialspoint.com/c_standard_library/c_function_malloc.htm
 Creating a directory
 https://stackoverflow.com/questions/7430248/creating-a-new-directory-in-c
 
+Copying a file in c
+http://forum.codecall.net/topic/60459-copying-binary-file-in-c/
+
+Getting file size
+https://www.includehelp.com/c-programs/find-size-of-file.aspx
+
 
 

@@ -400,6 +400,10 @@ void MyFind(char *dirname, File* files, int *n, SearchParams* sp) {
         sprintf(name, "%s/%s", dirname, de->d_name);
 
         if (de->d_type == 8) {
+            
+            if (sp == NULL) {
+                goto ignore;
+            }
 
             if (strlen(sp->name) != 0 && strstr(de->d_name, sp->name) == NULL) {
                 goto jump;
@@ -420,6 +424,8 @@ void MyFind(char *dirname, File* files, int *n, SearchParams* sp) {
                     goto jump;
                 }
             }
+
+            ignore:
 
             sprintf(files[(*n)].path, "%s", name);
             sprintf(files[(*n)].name, "%s", de->d_name);
