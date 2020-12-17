@@ -110,6 +110,12 @@ int main(int argc, char *argv[]) {
 
         isLogged = (user->userID != -1);
     
+        if (user->userID == -2) {
+            isLogged = 0;
+            pushNotification(BYEL "Only one session is allowed per user" reset, notifications, &nNotif);
+            break;
+        }
+
         if (isLogged == 1) {
             sprintf(tempLine, "Logged in. Welcome " BGRN "%s." reset, user->username);
             pushNotification(tempLine, notifications, &nNotif);
@@ -179,8 +185,6 @@ int main(int argc, char *argv[]) {
         }
 
         getUsers(sd, notifications, &nNotif, aUsers, &naUsers);
-    
-        
 
         break;
     case CONNECT_TO: ;

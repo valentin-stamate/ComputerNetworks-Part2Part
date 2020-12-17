@@ -171,12 +171,20 @@ void process_request(void *arg) {
 
         verifyUser(db, &u);
 
-        tdL->user_id = u.userID;
-
         if (u.userID != -1) {
             sprintf(tdL->user_email, "%s", u.email);
             tdL->isActive = 1;
         }
+
+        // allow only one sesion for users
+        for (int i = 0; i < nTdData && u.userID != -1; i++) {
+            if (tdDat[i].user_id == u.userID) {
+                u.userID = -2;
+                break;
+            }
+        }
+
+        tdL->user_id = u.userID != -2 ? u.userID : -1;
 
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
