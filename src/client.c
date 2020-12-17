@@ -180,6 +180,8 @@ int main(int argc, char *argv[]) {
 
         getUsers(sd, notifications, &nNotif, aUsers, &naUsers);
     
+        
+
         break;
     case CONNECT_TO: ;
         if (isLogged == 0) {
@@ -233,34 +235,45 @@ int main(int argc, char *argv[]) {
             pushNotification(BWHT "No users found to search files" reset, notifications, &nNotif);
             break;
         }
-        // TODO -1
+
         printf("Waiting for the user to accept\n");        
 
         sprintf(sf.params, "%s", command[2]);
         sf.user_id = u_id;
         
-
         type = SEARCH_USER_FILES;
-        write(sd, &type, sizeof(int));
+        if (write(sd, &type, sizeof(int)) == -1 ) {
+            perror("[Search User File]" WRITE_ERROR);
+            return 0;
+        }
 
-        write(sd, &sf, sizeof(SearchFile));
+        if (write(sd, &sf, sizeof(SearchFile)) == -1) {
+            perror("[Search User File]" WRITE_ERROR);
+            return 0;
+        }
 
-        read(sd, &n_ouf, sizeof(int));
+        if (read(sd, &n_ouf, sizeof(int)) == -1) {
+            perror("[Search User File]" READ_ERROR);
+            return 0;
+        }
 
         if (n_ouf == 0) {
-            printf("No files found\n");
+            pushNotification(BWHT "" reset, notifications, &nNotif);
             break;
         }
 
         for (int i = 0; i < n_ouf; i++) {
 
-            read(sd, other_user_files + i, sizeof(File));
+            if (read(sd, other_user_files + i, sizeof(File)) == -1) {
+                perror("[Search User File]" READ_ERROR);
+                return 0;
+            }
 
             sprintf(tempLine, BWHT "Filename: " BMAG "%s" BWHT " with id %d" reset, other_user_files[i].name, i);
             pushNotification(tempLine, notifications, &nNotif);
         }
 
-        pushNotification( WHTB "The command to get a file is " BBLU "search [file_id] [search_params]" reset, notifications, &nNotif);
+        pushNotification( BLKB "The command to get a file is " BBLU "get [file_id]" reset, notifications, &nNotif);
 
         break;
 
@@ -468,7 +481,10 @@ void process_search(int *arg) {
     int filesFound = 0;
     File files[MAX_FILES];
     
-    MyFind(FILES_LOCATION, files, &filesFound, NULL);
+    SearchParams sp;
+    processParams(&sp, sf.params); //
+
+    MyFind(FILES_LOCATION, files, &filesFound, &sp);
 
     if (write(sdSr, &filesFound, sizeof(int)) == -1) {
         perror("[PROCESS SEARCH]" WRITE_ERROR);

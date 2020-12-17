@@ -45,6 +45,37 @@ void trimString(char* s, char c) {
 
 }
 
+void processParams(SearchParams* sp, char* params) {
+    // [name][extension][(+/-)dimension]
+
+    sp->size = 0;
+    strcpy(sp->name, "");
+    strcpy(sp->extension, "");
+
+    if (strcmp(params, "[]") == 0) {
+        return;
+    }
+
+    int l = 0;
+    char *f = strchr(params, ']');
+    l = f - params;
+    strncat(sp->name, params + 1, l - 1);
+    f++;
+
+    char *s = strchr(f, ']'); 
+    l = s - f;
+    strncat(sp->extension, f + 1, l - 1);
+    s++;
+
+    char *t = strchr(s, ']');
+    l = t - s;
+
+    char nr[100] = "";
+    strncat(nr, s + 1, l - 1);
+
+    sp->size = atoi(nr);
+}
+
 void getBlocks(char destination[10][255], char *source, int *len) {
     char *p = strchr(source, ' ');
 
@@ -210,7 +241,7 @@ void getUsers(int sd, char notification[MAX_NOTIF][500], int* n, User* users, in
     char* line = malloc(500);
 
     if (*nUsers != 0) {
-        sprintf(line, "To connect with a user type the command connect to <user_id>");
+        sprintf(line, BWHT "To connect with a user type the command connect to " BBLK "[user_id]" BWHT "." reset);
 
         pushNotification(line, notification, n);
 
@@ -286,55 +317,17 @@ void popNotification(char notifications[MAX_NOTIF][500], int* n) {
     (*n) = (*n) - 1;
 }
 
-void showFileStatus(struct stat st) {
-    char perm[10];
-    strcpy(perm, "");
-    strcat(perm, "---------");
-    if( S_IRUSR & st.st_mode )  perm[0]='r';
-    if( S_IWUSR & st.st_mode )  perm[1]='w';
-    if( S_IXUSR & st.st_mode )  perm[2]='x';
-    if( S_IRGRP & st.st_mode )  perm[3]='r';
-    if( S_IWGRP & st.st_mode )  perm[4]='w';
-    if( S_IXGRP & st.st_mode )  perm[5]='x';
-    if( S_IROTH & st.st_mode )  perm[6]='r';
-    if( S_IWOTH & st.st_mode )  perm[7]='w';
-    if( S_IXOTH & st.st_mode )  perm[8]='x';
-
-    if (strcmp(perm, "---------") == 0) {
-        printf("File doesn't exist\n");
-        return;
-    }
-
-    printf("\nFile status:\n"); 
-    printf("Total size: %d\n", (int)st.st_size);
-    printf("Tile of last access: %d\n", (int)st.st_atim.tv_sec);
-    printf("Time of last modification: %d\n", (int)st.st_mtim.tv_sec);
-    printf("ID of device containing file: %d\n", (int)st.st_dev);
-
-    printf("File permissions: %s\n", perm);
-
-    printf("\n");
-}
-
-struct stat MyStat(char *path, int* status) {
+int fileSize(char* path) {
     struct stat st;
 
-    int acc = access(path, F_OK);
-
-    if (acc == -1) {
-        perror(ACCESS_ERROR);
-    }
-
-    (*status) = acc == 0;
-
-    if ( stat(path, &st) == -1 ) {
+    if (stat(path, &st) == -1) {
         perror(STAT_ERROR);
     }
 
-    return st;
+    return st.st_size;
 }
 
-void MyFind(char *dirname, File* files, int *n, char* search_param) {
+void MyFind(char *dirname, File* files, int *n, SearchParams* sp) {
     DIR *dd = opendir(dirname);
 
     struct dirent *de;
@@ -357,12 +350,35 @@ void MyFind(char *dirname, File* files, int *n, char* search_param) {
         sprintf(name, "%s/%s", dirname, de->d_name);
 
         if (de->d_type == 8) {
+
+            if (strlen(sp->name) != 0 && strstr(de->d_name, sp->name) == NULL) {
+                goto jump;
+            }
+
+            if (strlen(sp->extension) != 0 && strstr(de->d_name, sp->extension) == NULL) {
+                goto jump;
+            }
+
+            if (sp->size != 0) {
+                int size = fileSize(name);
+                // at least size
+                if (sp->size < 0 && size < -sp->size) {
+                    goto jump;
+                }
+                // maximum size
+                if (sp->size > 0 && size > sp->size) {
+                    goto jump;
+                }
+            }
+
             sprintf(files[(*n)].path, "%s", name);
             sprintf(files[(*n)].name, "%s", de->d_name);
             (*n)++;
         } else {
-            MyFind(name, files, n, search_param);
+            MyFind(name, files, n, sp);
         }
+
+        jump:
 
         de = readdir(dd);
     }

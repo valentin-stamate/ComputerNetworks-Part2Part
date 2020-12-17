@@ -27,11 +27,19 @@ struct SearchFile {
     char params[255];
 };
 
+struct SearchParams {
+    char name[255];         // the (sub)name required
+    char extension[10];     // the extension eg. .txt .mkv etc
+    int size;               // the (-)minimum/(+)maximum size a file can have
+};
+
+
 
 typedef struct User User;
 typedef struct File File;
 typedef struct RequestedFile RequestedFile;
 typedef struct SearchFile SearchFile;
+typedef struct SearchParams SearchParams;
 
 void showUser(User*);
 

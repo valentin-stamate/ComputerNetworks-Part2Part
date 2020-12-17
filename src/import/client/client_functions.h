@@ -24,10 +24,11 @@ void popNotification(char[MAX_NOTIF][500], int*);
 
 void getUsers(int, char[MAX_NOTIF][500], int*, User*, int*);
 
-void showFileStatus(struct stat);
-struct stat MyStat(char*, int*);
-void MyFind(char*, File*, int*, char*);
+void MyFind(char*, File*, int*, SearchParams*);
+int fileSize(char*);
 
 void clearNotifications(char [MAX_NOTIF][500], int*);
+
+void processParams(SearchParams*, char*);
 
 void printColors();

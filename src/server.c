@@ -151,6 +151,7 @@ void process_request(void *arg) {
     if (read(sd, &REQUEST_TYPE, sizeof(int)) <= 0) {
         printf("[Thread %d] ", tdL->idThread);
         perror("read() error\n");
+        tdL->user_id = -1;
         return;
     }
 
@@ -164,6 +165,7 @@ void process_request(void *arg) {
 
         if (read(sd, &u, sizeof(User)) == -1) {
             perror("[server] " READ_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -178,6 +180,7 @@ void process_request(void *arg) {
 
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -187,6 +190,7 @@ void process_request(void *arg) {
 
         if (read(sd, &u, sizeof(User)) == -1) {
             perror("[server] " READ_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -199,6 +203,7 @@ void process_request(void *arg) {
 
         if (write(sd, &u, sizeof(User)) == -1) {
             perror("[server] " WRITE_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -223,12 +228,14 @@ void process_request(void *arg) {
 
         if (write(sd, &nActiveUsers, sizeof(int)) == -1) {
             printf("[SHOW_ACTIVE_USERS]" WRITE_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
         for (int i = 0; i < nActiveUsers; i++) {
             if (write(sd, active_users + i, sizeof(User)) == -1) {
                 printf("[SHOW_ACTIVE_USERS]" WRITE_ERROR);
+                tdL->user_id = -1;
                 return;
             }
         }
@@ -241,6 +248,7 @@ void process_request(void *arg) {
 
         if (read(sd, &rf, sizeof(RequestedFile)) == -1) {
             perror("[TRANSFER]" READ_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -255,6 +263,7 @@ void process_request(void *arg) {
         
         if (write(sdTr, &rf, sizeof(RequestedFile)) == -1) {
             perror("[TRANSFER]" WRITE_ERROR);
+            tdL->user_id = -1;
             return;
         }
         
@@ -265,11 +274,13 @@ void process_request(void *arg) {
             // get bytes
             if (read(sdTr, &bytes, sizeof(int)) == -1) {
                 perror("[TRANSFER]" READ_ERROR);
+                tdL->user_id = -1;
                 return;
             }
             // sent to user bytes lenght
             if (write(sd, &bytes, sizeof(int)) == -1) {
                 perror("[TRANSFER]" WRITE_ERROR);
+                tdL->user_id = -1;
                 return;
             }
 
@@ -280,12 +291,14 @@ void process_request(void *arg) {
             // read the buffer
             if (read(sdTr, buffer, bytes) == -1) {
                 perror("[TRANSFER]" READ_ERROR);
+                tdL->user_id = -1;
                 return;
             }
 
             // send to user the buffer
             if (write(sd, buffer, bytes) == -1) {
                 perror("[TRANSFER]" WRITE_ERROR);
+                tdL->user_id = -1;
                 return;
             }
 
@@ -301,6 +314,7 @@ void process_request(void *arg) {
 
         if (read(sd, &sf, sizeof(SearchFile)) == -1) {
             perror("[SEARCH USER FILES]" READ_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -315,6 +329,7 @@ void process_request(void *arg) {
 
         if (write(sdSr, &sf, sizeof(SearchFile)) == -1) {
             perror("[SEARCH USER FILES]" WRITE_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -322,11 +337,13 @@ void process_request(void *arg) {
 
         if (read(sdSr, &nFiles, sizeof(int)) == -1) {
             perror("[SEARCH USER FILES]" READ_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
         if (write(sd, &nFiles, sizeof(int)) == -1) {
             perror("[SEARCH USER FILES]" WRITE_ERROR);
+            tdL->user_id = -1;
             return;
         }
 
@@ -334,10 +351,12 @@ void process_request(void *arg) {
             File f;
             if (read(sdSr, &f, sizeof(File)) == -1) {
                 perror("[SEARCH USER FILES]" READ_ERROR);
+                tdL->user_id = -1;
                 return;
             }
             if (write(sd, &f, sizeof(File)) == -1) {
                 perror("[SEARCH USER FILES]" WRITE_ERROR);
+                tdL->user_id = -1;
                 return;
             }
         }
