@@ -1,5 +1,7 @@
 *.db
 *.exe
+*client
+*server
 *.vscode
 *downloads
 *files

@@ -30,6 +30,8 @@ void pushNotif(char*);
 void showNotif();
 void clearNotif();
 
+int helpShown = 0;
+
 int sd, sdFt, sdSr;
 struct sockaddr_in server;
 
@@ -89,6 +91,10 @@ int main(int argc, char *argv[]) {
     printf("%s" CLI " ", SIGGNED_AS);
     getLine(rawCommand, sizeof(rawCommand));
 
+    if (helpShown == 1) {
+        helpShown = 0;
+        goto repeat;
+    }
 
     trimString(rawCommand, ' ');
 
@@ -140,6 +146,12 @@ int main(int argc, char *argv[]) {
             sprintf(tempLine, BWHT "Invalid credentials. User may already exist." reset);
             pushNotif(tempLine);
         }
+
+        break;
+    case HELP:
+
+        showHelp();
+        helpShown = 1;
 
         break;
     case CLEAR_NOTIFICATIONS: ;
@@ -200,17 +212,27 @@ int main(int argc, char *argv[]) {
         }
 
         if (naUsers == 0) {
-            pushNotif(BWHT "Run this command display users first." reset);
+            pushNotif(BWHT "Run " BMAG "show users" BWHT " first." reset);
             break;
         }
 
         int connectToID = atoi(command[2]);
+
+        for (int i = 0; i < ncUsers; i++) {
+            if (cUsers[i].userID == connectToID) {
+                sprintf(tempLine, BYEL "Already connected to user" BWHT "%s" BYEL "." reset, cUsers->username);
+                pushNotif(tempLine);
+                break;
+            }
+        }
+
         for (int i = 0; i < naUsers; i++) {
             if (aUsers[i].userID == connectToID) {
                 cUsers[ncUsers++] = aUsers[i];
                 sprintf(tempLine, BWHT "Successfully connected to " BGRN "%s" BWHT "." reset, cUsers[ncUsers - 1].username);
                 pushNotif(tempLine);
-                pushNotif( BWHT "In order to transfer files you both have to be connected." reset);
+                sprintf(tempLine, "%s", BWHT "Now you can search files by typing" BMAG " search [user_id][(sub)name][.ext][-/+size]|[]" BWHT "." reset);
+                pushNotif(tempLine);
                 break;
             }
         }
@@ -289,11 +311,11 @@ int main(int argc, char *argv[]) {
                 return 0;
             }
 
-            sprintf(tempLine, BWHT "Filename: " BMAG "%s" BWHT " with id %d" reset, other_user_files[i].name, i);
+            sprintf(tempLine, BWHT "Filename: " BBLU "%s" BWHT " with id %d" reset, other_user_files[i].name, i);
             pushNotif(tempLine);
         }
 
-        pushNotif( BLKB "To get a file run " BBLU "get [file_id]" reset);
+        pushNotif( BWHT "To get a file run " BMAG "get file [file_id]" reset);
 
         break;
 
@@ -321,7 +343,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        printf("Getting file. Waiting for the client to confirm the tranfer.\n");
+        printf("Getting file. Waiting for the client to confirm the tranfer...\n");
 
         int selected_file = atoi(command[2]);
 
@@ -356,7 +378,6 @@ int main(int argc, char *argv[]) {
 
         char path[4096];
         sprintf(path, "%s/%s", "./downloads", rf.fileName);
-        printf("The path is %s\n", path);
 
         int fdFile = open(path, O_WRONLY | O_CREAT, 0666);
 

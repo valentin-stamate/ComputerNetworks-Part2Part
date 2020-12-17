@@ -30,10 +30,8 @@ struct SearchFile {
 struct SearchParams {
     char name[255];         // the (sub)name required
     char extension[10];     // the extension eg. .txt .mkv etc
-    int size;               // the (-)minimum/(+)maximum size a file can have
+    int size;               // (-less)/(+more)
 };
-
-
 
 typedef struct User User;
 typedef struct File File;

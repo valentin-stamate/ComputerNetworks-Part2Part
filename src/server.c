@@ -333,7 +333,7 @@ void process_request(void *arg) {
             return;
         }
         
-        printf("Searching requets from %d to %d", tdL->user_id, sf.user_id);
+        printf("Searching requets from %d to %d\n", tdL->user_id, sf.user_id);
 
         int sdSr;
 

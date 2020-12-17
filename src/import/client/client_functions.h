@@ -7,6 +7,7 @@
 #define MAX_NOTIF 50
 
 void showWelcomeMessage(User*);
+void showHelp();
 void trimString(char*, char);
 void getBlocks(char[10][255], char*, int*);
 int process(char[10][255], int);

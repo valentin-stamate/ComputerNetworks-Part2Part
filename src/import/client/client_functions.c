@@ -321,6 +321,46 @@ void popNotification(char notifications[MAX_NOTIF][500], int* n) {
     (*n) = (*n) - 1;
 }
 
+void showHelp() {
+    printf("                                          User Commands                                          \n");
+    printf(BWHT "Name\n" reset);
+    printf("              " BWHT "help" reset "   - shows the information about all the commands\n\n");
+    
+    printf("              " BWHT "signup" reset " - user this to create an account\n\n");
+    
+    printf("              " BWHT "login" reset "  - if you aready have an account use this to log in and use the other\n");
+    printf("                     - commands listed below\n\n");
+    printf("              " BWHT "logout" reset " - logout\n\n");
+
+    printf("              " BWHT "show files" reset " - list your local files\n\n");
+
+    printf("              " BWHT "show connected users" reset " - list all connected users users\n\n");
+    
+    printf("              " BWHT "search [user_id] [name][.ext][-/+size]" reset " - this will search for user files. The name is\n");
+    printf("                                                     - the (sub)name of a file, .ext is the extension\n");
+    printf("                                                     - and -/+ is the size: - means less than and + more than\n");
+    printf("                                                     - + more than. If you don't want to specify any\n");
+    printf("                                                     - parameters put [] instead.\n\n");
+    
+    printf("              " BWHT "send file" reset " - allow users to get the file requested\n\n");
+    
+    printf("              " BWHT "show users" reset " - list connected users. Then you can connect with them.\n\n");
+    
+    printf("              " BWHT "connect to [user_id]" reset " - connect to a user. This will allow you to get user files.\n\n");
+    
+    printf("              " BWHT "get file [file_id]" reset " - select the file you want to get. file_id is the id shown after\n");
+    printf("                                 search command\n\n");
+
+    
+    printf("              " BWHT "allow discovery" reset " - allow users to discover your local files\n\n");
+    
+    printf("              " BWHT "clear notifications" reset " - clears the notifications\n\n");
+    
+    printf("              " BWHT "quit" reset " - kill the process\n\n");
+
+    char c;
+    scanf("%c", &c);
+}
 
 void initializeTransferDescriptors(int sd, int* sdF, int *sdSr, User* user) {
     struct sockaddr_in socket_file;
@@ -415,12 +455,12 @@ void MyFind(char *dirname, File* files, int *n, SearchParams* sp) {
 
             if (sp->size != 0) {
                 int size = fileSize(name);
-                // at least size
-                if (sp->size < 0 && size < -sp->size) {
+                // maximim size
+                if (sp->size < 0 && size > -sp->size) {
                     goto jump;
                 }
-                // maximum size
-                if (sp->size > 0 && size > sp->size) {
+                // minimum size
+                if (sp->size > 0 && size < sp->size) {
                     goto jump;
                 }
             }
