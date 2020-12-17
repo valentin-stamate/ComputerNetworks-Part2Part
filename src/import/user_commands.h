@@ -11,7 +11,7 @@
 #define REQUEST_CONNECTION 6
 #define SHOW_FILES 7
 #define GET_FILE 8
-#define PUT_FILE 9
+#define SEND_FILE 9
 #define CLEAR_NOTIFICATIONS 10
 #define CONNECT_TO 11
 #define ALLOW_DISCOVERY 12

@@ -26,9 +26,9 @@ void process_file_transfer(int*);
 static void *treat_search(void*);
 void process_search(int*);
 
-int nCn = 0;
-
-int currentThread = 1;
+void pushNotif(char*);
+void showNotif();
+void clearNotif();
 
 int sd, sdFt, sdSr;
 struct sockaddr_in server;
@@ -36,7 +36,6 @@ struct sockaddr_in server;
 int uploading = 0;
 int searching = 0;
 
-void initializeTransferDescriptors(int, int*, int*);
 RequestedFile rf;
 SearchFile sf;
 
@@ -79,8 +78,8 @@ int main(int argc, char *argv[]) {
     system("clear");
 
     showWelcomeMessage(user);
-    showNotifications(notifications, nNotif);
-    clearNotifications(notifications, &nNotif);
+    showNotif();
+    clearNotif();
 
     sprintf(SIGGNED_AS, "%s", "");
     if (isLogged == 1) {
@@ -112,17 +111,17 @@ int main(int argc, char *argv[]) {
     
         if (user->userID == -2) {
             isLogged = 0;
-            pushNotification(BYEL "Only one session is allowed per user" reset, notifications, &nNotif);
+            pushNotif(BYEL "Only one session is allowed per user" reset);
             break;
         }
 
         if (isLogged == 1) {
             sprintf(tempLine, "Logged in. Welcome " BGRN "%s." reset, user->username);
-            pushNotification(tempLine, notifications, &nNotif);
+            pushNotif(tempLine);
             
-            initializeTransferDescriptors(sd, &sdFt, &sdSr);
+            initializeTransferDescriptors(sd, &sdFt, &sdSr, user);
         } else {
-            pushNotification(BRED "Invalid credentials" reset, notifications, &nNotif);
+            pushNotif(BRED "Invalid credentials" reset);
         }
 
         break;
@@ -133,13 +132,13 @@ int main(int argc, char *argv[]) {
         isLogged = (user->userID != -1);
 
         if (isLogged == 1) {
-            initializeTransferDescriptors(sd, &sdFt, &sdSr);
+            initializeTransferDescriptors(sd, &sdFt, &sdSr, user);
             
             sprintf(tempLine, BWHT "Successfully signed in. Welcome " BCYN "%s." reset, user->username);
-            pushNotification(tempLine, notifications, &nNotif);
+            pushNotif(tempLine);
         } else {
             sprintf(tempLine, BWHT "Invalid credentials. User may already exist." reset);
-            pushNotification(tempLine, notifications, &nNotif);
+            pushNotif(tempLine);
         }
 
         break;
@@ -147,7 +146,13 @@ int main(int argc, char *argv[]) {
         clearNotifications(notifications, &nNotif);
         break;
     case LOGOUT:
-        pushNotification(BWHT "Logged out." reset, notifications, &nNotif);
+
+        if (isLogged == 0) {
+            pushNotif(BWHT "In order to run this command log in first." reset);
+            break;
+        }
+
+        pushNotif(BWHT "Logged out." reset);
 
         isLogged = 0;
         user->userID = -1;
@@ -163,24 +168,24 @@ int main(int argc, char *argv[]) {
     case SHOW_CONNECTED_USERS: ;
 
         if (isLogged == 0) {
-            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
+            pushNotif(BWHT "In order to run this command log in first." reset);
             break;
         }
 
         if (ncUsers == 0) {
-            pushNotification(BWHT "You don't have user connections", notifications, &nNotif);
+            pushNotif(BWHT "You don't have user connections");
         }
 
         for (int i = 0; i < ncUsers; i++) {
             sprintf(tempLine, BWHT "%s" reset, cUsers[i].username);
-            pushNotification(tempLine, notifications, &nNotif);
+            pushNotif(tempLine);
         }
 
         break;
     case GET_USERS: ;
 
         if (isLogged == 0) {
-            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
+            pushNotif(BWHT "In order to run this command log in first." reset);
             break;
         }
 
@@ -188,13 +193,14 @@ int main(int argc, char *argv[]) {
 
         break;
     case CONNECT_TO: ;
+
         if (isLogged == 0) {
-            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
+            pushNotif(BWHT "In order to run this command log in first." reset);
             break;
         }
 
         if (naUsers == 0) {
-            pushNotification(BWHT "Run the command get users first" reset, notifications, &nNotif);
+            pushNotif(BWHT "Run this command display users first." reset);
             break;
         }
 
@@ -203,8 +209,8 @@ int main(int argc, char *argv[]) {
             if (aUsers[i].userID == connectToID) {
                 cUsers[ncUsers++] = aUsers[i];
                 sprintf(tempLine, BWHT "Successfully connected to " BGRN "%s" BWHT "." reset, cUsers[ncUsers - 1].username);
-                pushNotification(tempLine, notifications, &nNotif);
-                pushNotification( BWHT "In order to transfer files you both have to be connected." reset, notifications, &nNotif);
+                pushNotif(tempLine);
+                pushNotif( BWHT "In order to transfer files you both have to be connected." reset);
                 break;
             }
         }
@@ -213,20 +219,30 @@ int main(int argc, char *argv[]) {
     case SHOW_FILES: ;
 
         if (isLogged == 0) {
-            pushNotification(BWHT "In order to run this command log in first." reset, notifications, &nNotif);
+            pushNotif(BWHT "In order to run this command log in first." reset);
             break;
         }
 
         n_uf = 0;
+
         MyFind(FILES_LOCATION, user_files, &n_uf, NULL);
 
+        if (n_uf == 0) {
+            pushNotif(BWHT "No files were found locally." reset);
+        }
+
         for (int i = 0; i < n_uf; i++) {
-            pushNotification(user_files[i].path, notifications, &nNotif);
+            pushNotif(user_files[i].path);
         }
 
         break;
     
     case SEARCH_USER_FILES: ;
+
+        if (isLogged == 0) {
+            pushNotif(BWHT "In order to run this command log in first." reset);
+            break;
+        }
 
         int u_id = atoi(command[1]);
 
@@ -236,7 +252,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (found == 0) {
-            pushNotification(BWHT "No users found to search files" reset, notifications, &nNotif);
+            pushNotif(BWHT "No users found to search files" reset);
             break;
         }
 
@@ -262,7 +278,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (n_ouf == 0) {
-            pushNotification(BWHT "" reset, notifications, &nNotif);
+            pushNotif(BWHT "No files were found." reset);
             break;
         }
 
@@ -274,14 +290,20 @@ int main(int argc, char *argv[]) {
             }
 
             sprintf(tempLine, BWHT "Filename: " BMAG "%s" BWHT " with id %d" reset, other_user_files[i].name, i);
-            pushNotification(tempLine, notifications, &nNotif);
+            pushNotif(tempLine);
         }
 
-        pushNotification( BLKB "The command to get a file is " BBLU "get [file_id]" reset, notifications, &nNotif);
+        pushNotif( BLKB "To get a file run " BBLU "get [file_id]" reset);
 
         break;
 
     case ALLOW_DISCOVERY: ;
+
+        if (isLogged == 0) {
+            pushNotif(BWHT "In order to run this command log in first." reset);
+            break;
+        }
+
         printf("Waiting for the client to search a file...\n");
         
         searching = 1;
@@ -294,17 +316,22 @@ int main(int argc, char *argv[]) {
 
     case GET_FILE: ;
 
+        if (isLogged == 0) {
+            pushNotif(BWHT "In order to run this command log in first." reset);
+            break;
+        }
+
         printf("Getting file. Waiting for the client to confirm the tranfer.\n");
 
         int selected_file = atoi(command[2]);
 
         if (n_ouf == 0) {
-            pushNotification(BWHT "Select search for files first." reset, notifications, &nNotif);
+            pushNotif(BWHT "Select search for files first." reset);
             break;
         }
 
         if (selected_file >= n_ouf) {
-            pushNotification(BWHT "Select a valid file_id" reset, notifications, &nNotif);
+            pushNotif(BWHT "Select a valid file_id" reset);
             break;
         }
 
@@ -361,13 +388,18 @@ int main(int argc, char *argv[]) {
 
 
         sprintf(tempLine, BGRN "File transfered succesfully from " BWHT "%s" BGRN "." reset, rf.username);
-        pushNotification(tempLine, notifications, &nNotif);
+        pushNotif(tempLine);
 
         sleep(5);// for testing purposes
 
         break;
 
-    case PUT_FILE: ;
+    case SEND_FILE: ;
+
+        if (isLogged == 0) {
+            pushNotif(BWHT "In order to run this command log in first." reset);
+            break;
+        }
 
         printf("Waiting for the client to request a file...\n");
         uploading = 1;
@@ -378,12 +410,12 @@ int main(int argc, char *argv[]) {
         }
 
         sprintf(tempLine, BGRN "File transfered succesfully." reset);
-        pushNotification(tempLine, notifications, &nNotif);
+        pushNotif(tempLine);
 
         break;
 
     default:
-        pushNotification("Invalid command! To see all commands press " BWHT "help." reset, notifications, &nNotif);
+        pushNotif("Invalid command! To see all commands press " BWHT "help." reset);
         break;
     }
 
@@ -506,53 +538,17 @@ void process_search(int *arg) {
     goto repeat;
 }
 
-
-struct sockaddr_in socket_file;
-struct sockaddr_in socket_search;
-
-void initializeTransferDescriptors(int sd, int* sdF, int *sdSr) {
-
-    int type = CONNECT_TRANSFER;
-
-    socket_file.sin_family = AF_INET;
-    socket_file.sin_addr.s_addr = inet_addr(GATEWAY_IP);
-    socket_file.sin_port = htons(PORT);
-
-    if (((*sdF) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror (SOCKET_ERROR);
-        return;
-    }
-
-    if (connect ((*sdF), (struct sockaddr *) &socket_file,sizeof (struct sockaddr)) == -1) {
-        perror (CONNECT_ERROR);
-        return;
-    }
-
-    write((*sdF), &type, sizeof(int));
-    write((*sdF), user, sizeof(User));
-
-
-    type = CONNECT_SEARCH;
-
-    socket_search.sin_family = AF_INET;
-    socket_search.sin_addr.s_addr = inet_addr(GATEWAY_IP);
-    socket_search.sin_port = htons(PORT);
-
-    if (((*sdSr) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror (SOCKET_ERROR);
-        return;
-    }
-
-    if (connect ((*sdSr), (struct sockaddr *) &socket_search,sizeof (struct sockaddr)) == -1) {
-        perror (CONNECT_ERROR);
-        return;
-    }
-
-    write((*sdSr), &type, sizeof(int));
-    write((*sdSr), user, sizeof(User));
-
+void pushNotif(char* text) {
+    pushNotification(text, notifications, &nNotif);
 }
 
+void showNotif() {
+    showNotifications(notifications, nNotif);
+}
+
+void clearNotif() {
+    clearNotifications(notifications, &nNotif);
+}
 
 
 

@@ -222,6 +222,7 @@ void process_request(void *arg) {
         break;
 
     case GET_USERS: ;
+        printf("Getting users for %d\n", tdL->user_id);
 
         nActiveUsers = 0;
 
@@ -251,6 +252,7 @@ void process_request(void *arg) {
         break;
 
     case GET_FILE: ;
+        printf("Getting file request for %d\n", tdL->user_id);
 
         RequestedFile rf;
 
@@ -278,6 +280,9 @@ void process_request(void *arg) {
         char buffer[4096];
         int bytes;
 
+        printf("Transferring file %d -> %d ...\n", rf.user_id, tdL->user_id);
+
+        int size = 0;
         while (1) {
             // get bytes
             if (read(sdTr, &bytes, sizeof(int)) == -1) {
@@ -291,6 +296,8 @@ void process_request(void *arg) {
                 tdL->user_id = -1;
                 return;
             }
+            
+            size+= bytes;
 
             if (bytes == 0) {
                 break;
@@ -312,7 +319,7 @@ void process_request(void *arg) {
 
         }
 
-
+        printf("Transfer completed, %d bytes were written to %d\n", size, tdL->user_id);
 
         break;
 
@@ -325,6 +332,8 @@ void process_request(void *arg) {
             tdL->user_id = -1;
             return;
         }
+        
+        printf("Searching requets from %d to %d", tdL->user_id, sf.user_id);
 
         int sdSr;
 

@@ -4,11 +4,15 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
 
 #include "client_functions.h"
 #include "../ANSI-color-codes.h"
 #include "../user_commands.h"
 #include "../errors.h"
+#include "../configuration.h"
 
 void showWelcomeMessage(User* u) {
     char user[300] = "";
@@ -20,7 +24,7 @@ void showWelcomeMessage(User* u) {
     if (u->userID == -1) {
         printf("In order to run commands log in fist.\n\n" reset);
     } else {
-        printf("To see all the commands type " BWHT "help" BBLU ".\n\n" reset);
+        printf("To see all the commands type " BMAG "help" BBLU ".\n\n" reset);
     }
 
     printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB BWHT " login " reset "\n\n");
@@ -146,7 +150,7 @@ int process(char command[10][255], int blocks) {
     }
 
     if (blocks == 2 && strcmp(command[0], "send") == 0 && strcmp(command[1], "file") == 0) {
-        return PUT_FILE;
+        return SEND_FILE;
     }
 
     if (blocks == 1 && strcmp(command[0], "quit") == 0) {
@@ -241,7 +245,7 @@ void getUsers(int sd, char notification[MAX_NOTIF][500], int* n, User* users, in
     char* line = malloc(500);
 
     if (*nUsers != 0) {
-        sprintf(line, BWHT "To connect with a user type the command connect to " BBLK "[user_id]" BWHT "." reset);
+        sprintf(line, BWHT "To connect with a user type the command " BMAG "connect to [user_id]" BWHT "." reset);
 
         pushNotification(line, notification, n);
 
@@ -316,6 +320,52 @@ void popNotification(char notifications[MAX_NOTIF][500], int* n) {
     sprintf(notifications[9], "%s", "");
     (*n) = (*n) - 1;
 }
+
+
+void initializeTransferDescriptors(int sd, int* sdF, int *sdSr, User* user) {
+    struct sockaddr_in socket_file;
+    struct sockaddr_in socket_search;
+
+    int type = CONNECT_TRANSFER;
+
+    socket_file.sin_family = AF_INET;
+    socket_file.sin_addr.s_addr = inet_addr(GATEWAY_IP);
+    socket_file.sin_port = htons(PORT);
+
+    if (((*sdF) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror (SOCKET_ERROR);
+        return;
+    }
+
+    if (connect ((*sdF), (struct sockaddr *) &socket_file,sizeof (struct sockaddr)) == -1) {
+        perror (CONNECT_ERROR);
+        return;
+    }
+
+    write((*sdF), &type, sizeof(int));
+    write((*sdF), user, sizeof(User));
+
+
+    type = CONNECT_SEARCH;
+
+    socket_search.sin_family = AF_INET;
+    socket_search.sin_addr.s_addr = inet_addr(GATEWAY_IP);
+    socket_search.sin_port = htons(PORT);
+
+    if (((*sdSr) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror (SOCKET_ERROR);
+        return;
+    }
+
+    if (connect ((*sdSr), (struct sockaddr *) &socket_search,sizeof (struct sockaddr)) == -1) {
+        perror (CONNECT_ERROR);
+        return;
+    }
+
+    write((*sdSr), &type, sizeof(int));
+    write((*sdSr), user, sizeof(User));
+}
+
 
 int fileSize(char* path) {
     struct stat st;
