@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
                 cUsers[ncUsers++] = aUsers[i];
                 sprintf(tempLine, BWHT "Successfully connected to " BGRN "%s" BWHT "." reset, cUsers[ncUsers - 1].username);
                 pushNotif(tempLine);
-                sprintf(tempLine, "%s", BWHT "Now you can search files by typing" BMAG " search [user_id][(sub)name][.ext][-/+size]|[]" BWHT "." reset);
+                sprintf(tempLine, "%s", BWHT "Now you can search files by typing search [user_id][(sub)name][.ext][-/+size]|[]." reset);
                 pushNotif(tempLine);
                 break;
             }
@@ -258,7 +258,25 @@ int main(int argc, char *argv[]) {
         }
 
         break;
-    
+    case SHOW_DOWNLOADED_FILES: ;
+        if (isLogged == 0) {
+            pushNotif(BWHT "In order to run this command log in first." reset);
+            break;
+        }
+
+        n_uf = 0;
+
+        MyFind(DOWNLOAD_PATH, user_files, &n_uf, NULL);
+
+        if (n_uf == 0) {
+            pushNotif(BWHT "No downloaded files were found." reset);
+        }
+
+        for (int i = 0; i < n_uf; i++) {
+            pushNotif(user_files[i].path);
+        }
+
+        break;
     case SEARCH_USER_FILES: ;
 
         if (isLogged == 0) {
@@ -315,7 +333,7 @@ int main(int argc, char *argv[]) {
             pushNotif(tempLine);
         }
 
-        pushNotif( BWHT "To get a file run " BMAG "get file [file_id]" reset);
+        pushNotif( BWHT "To get a file run " BMAG "get file [file_id]" BWHT "." reset);
 
         break;
 
@@ -374,10 +392,10 @@ int main(int argc, char *argv[]) {
         }
         
         int bytes;
-        mkdir("./downloads", 0777);
+        mkdir(DOWNLOAD_PATH, 0777);
 
         char path[4096];
-        sprintf(path, "%s/%s", "./downloads", rf.fileName);
+        sprintf(path, "%s/%s", DOWNLOAD_PATH, rf.fileName);
 
         int fdFile = open(path, O_WRONLY | O_CREAT, 0666);
 
@@ -407,8 +425,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-
-        sprintf(tempLine, BGRN "File transfered succesfully from " BWHT "%s" BGRN "." reset, rf.username);
+        sprintf(tempLine, BGRN "File " BMAG "%s" BGRN " transfered succesfully." reset, rf.fileName);
         pushNotif(tempLine);
 
         sleep(5);// for testing purposes

@@ -125,6 +125,10 @@ int process(char command[10][255], int blocks) {
         return CONNECT_TO;
     }
 
+    if (blocks == 3 && strcmp(command[0], "show") == 0 && strcmp(command[1], "downloaded") == 0 && strcmp(command[2], "files") == 0) {
+        return SHOW_DOWNLOADED_FILES;
+    }
+
     if (blocks == 2 && strcmp(command[0], "clear") == 0 && strcmp(command[1], "notifications") == 0) {
         return CLEAR_NOTIFICATIONS;
     }
@@ -334,6 +338,8 @@ void showHelp() {
 
     printf("              " BWHT "show files" reset " - list your local files\n\n");
 
+    printf("              " BWHT "show downloaded files" reset " - list your local downloaded files\n\n");
+
     printf("              " BWHT "show connected users" reset " - list all connected users users\n\n");
     
     printf("              " BWHT "search [user_id] [name][.ext][-/+size]" reset " - this will search for user files. The name is\n");
@@ -384,7 +390,6 @@ void initializeTransferDescriptors(int sd, int* sdF, int *sdSr, User* user) {
 
     write((*sdF), &type, sizeof(int));
     write((*sdF), user, sizeof(User));
-
 
     type = CONNECT_SEARCH;
 

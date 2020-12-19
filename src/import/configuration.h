@@ -2,6 +2,7 @@
 
 #define CLI "$"
 #define FILES_LOCATION "./files"
+#define DOWNLOAD_PATH "./downloads"
 
 // CONFIGURATION
 #define MAX_FILES 100
