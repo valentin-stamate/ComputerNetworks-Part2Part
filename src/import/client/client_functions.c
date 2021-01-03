@@ -368,15 +368,15 @@ void showHelp() {
     scanf("%c", &c);
 }
 
-void initializeTransferDescriptors(int sd, int* sdF, int *sdSr, User* user) {
+void initializeTransferDescriptors(int sd, int* sdF, int *sdSr, User* user, char* ip, int port) {
     struct sockaddr_in socket_file;
     struct sockaddr_in socket_search;
 
     int type = CONNECT_TRANSFER;
 
     socket_file.sin_family = AF_INET;
-    socket_file.sin_addr.s_addr = inet_addr(GATEWAY_IP);
-    socket_file.sin_port = htons(PORT);
+    socket_file.sin_addr.s_addr = inet_addr(ip);
+    socket_file.sin_port = htons(port);
 
     if (((*sdF) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
         perror (SOCKET_ERROR);
@@ -394,8 +394,8 @@ void initializeTransferDescriptors(int sd, int* sdF, int *sdSr, User* user) {
     type = CONNECT_SEARCH;
 
     socket_search.sin_family = AF_INET;
-    socket_search.sin_addr.s_addr = inet_addr(GATEWAY_IP);
-    socket_search.sin_port = htons(PORT);
+    socket_search.sin_addr.s_addr = inet_addr(ip);
+    socket_search.sin_port = htons(port);
 
     if (((*sdSr) = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
         perror (SOCKET_ERROR);

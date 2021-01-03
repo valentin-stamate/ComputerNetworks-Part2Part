@@ -29,7 +29,7 @@ void MyFind(char*, File*, int*, SearchParams*);
 int fileSize(char*);
 
 void clearNotifications(char [MAX_NOTIF][500], int*);
-void initializeTransferDescriptors(int, int*, int*, User*);
+void initializeTransferDescriptors(int, int*, int*, User*, char*, int);
 
 void processParams(SearchParams*, char*);
 

@@ -43,10 +43,22 @@ SearchFile sf;
 
 int main(int argc, char *argv[]) {
 
+    char* ip;
+    int port;
+
+    if (argc == 3) {
+        ip = argv[1];
+        port = atoi(argv[2]);
+    } else {
+        ip = DEFAULT_GATEWAY_IP;
+        port = atoi(DEFAULT_PORT);
+    }
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr(GATEWAY_IP);
-    server.sin_port = htons(PORT);
+    server.sin_addr.s_addr = inet_addr(ip);
+    server.sin_port = htons(port);
+    
+    printf("Connected with ip address: %s on port %d\n", ip, port);
 
     user = (User*) malloc(sizeof(User));
     user->userID = -1;
@@ -125,7 +137,7 @@ int main(int argc, char *argv[]) {
             sprintf(tempLine, "Logged in. Welcome " BGRN "%s." reset, user->username);
             pushNotif(tempLine);
             
-            initializeTransferDescriptors(sd, &sdFt, &sdSr, user);
+            initializeTransferDescriptors(sd, &sdFt, &sdSr, user, ip, port);
         } else {
             pushNotif(BRED "Invalid credentials" reset);
         }
@@ -138,7 +150,7 @@ int main(int argc, char *argv[]) {
         isLogged = (user->userID != -1);
 
         if (isLogged == 1) {
-            initializeTransferDescriptors(sd, &sdFt, &sdSr, user);
+            initializeTransferDescriptors(sd, &sdFt, &sdSr, user, ip, port);
             
             sprintf(tempLine, BWHT "Successfully signed in. Welcome " BCYN "%s." reset, user->username);
             pushNotif(tempLine);

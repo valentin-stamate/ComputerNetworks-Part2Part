@@ -26,6 +26,17 @@ int nTdData = 0;
 
 int main(int argc, char *argv[]) {
 
+    char* ip;
+    int port;
+
+    if (argc == 3) {
+        ip = argv[1];
+        port = atoi(argv[2]);
+    } else {
+        ip = DEFAULT_GATEWAY_IP;
+        port = atoi(DEFAULT_PORT);
+    }
+
     db = openDatabase(DATABASE);
 
     if (argc == 2) {
@@ -54,8 +65,10 @@ int main(int argc, char *argv[]) {
     bzero(&from, sizeof(from));
 
     server.sin_family = AF_INET;
-    server.sin_port = htons(PORT);
-    server.sin_addr.s_addr = inet_addr(GATEWAY_IP);
+    server.sin_addr.s_addr = inet_addr(ip);
+    server.sin_port = htons(port);
+
+    printf("Connected with ip address: %s on port %d\n", ip, port);
 
     if (bind(sd, (struct sockaddr *)&server, sizeof(struct sockaddr)) == -1) {
         perror("[server] bind() error\n");
@@ -67,8 +80,6 @@ int main(int argc, char *argv[]) {
         return errno;
     }
 
-    printf("Waiting to port %d...\n", PORT);
-    
 
     for(;;) {
         int client;
