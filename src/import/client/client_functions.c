@@ -27,7 +27,7 @@ void showWelcomeMessage(User* u) {
         printf("To see all the commands type " BMAG "help" BBLU ".\n\n" reset);
     }
 
-    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB BWHT " login " reset " " BLUB " signup " reset " " REDB " exit " reset "\n\n");
+    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB BWHT " login " reset " " BLUB BWHT " signup " reset " " REDB BWHT " exit " reset "\n\n");
 
 }
 
