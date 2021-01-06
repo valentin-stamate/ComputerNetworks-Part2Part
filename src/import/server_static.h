@@ -24,8 +24,9 @@
 #include "server/server_functions.h"
 #include "user_commands.h"
 #include "errors.h"
+#include "utility.h"
 
 #define MAX_FILES 100
 
 #define DEFAULT_GATEWAY_IP "192.168.1.9"
-#define DEFAULT_PORT "2024"
+#define DEFAULT_PORT 1024

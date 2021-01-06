@@ -43,15 +43,12 @@ SearchFile sf;
 
 int main(int argc, char *argv[]) {
 
-    char* ip;
-    int port;
+    char* ip = getIp();
+    int port = DEFAULT_PORT;
 
-    if (argc == 3) {
-        ip = argv[1];
-        port = atoi(argv[2]);
-    } else {
-        ip = DEFAULT_GATEWAY_IP;
-        port = atoi(DEFAULT_PORT);
+    if (strlen(ip) < 5) {
+        printf("No connection found\n");
+        return 0;
     }
 
     server.sin_family = AF_INET;

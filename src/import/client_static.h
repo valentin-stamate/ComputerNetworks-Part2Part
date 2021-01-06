@@ -29,4 +29,5 @@
 #include "models.h"
 #include "configuration.h"
 #include "errors.h"
+#include "utility.h"
 
