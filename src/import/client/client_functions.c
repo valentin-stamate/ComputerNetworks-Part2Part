@@ -27,7 +27,7 @@ void showWelcomeMessage(User* u) {
         printf("To see all the commands type " BMAG "help" BBLU ".\n\n" reset);
     }
 
-    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB BWHT " login " reset "\n\n");
+    printf(BWHT "Few useful commands: " YELB " help " reset " " GRNB BWHT " login " reset " " BLUB " signup " reset " " REDB " exit " reset "\n\n");
 
 }
 
@@ -157,7 +157,7 @@ int process(char command[10][255], int blocks) {
         return SEND_FILE;
     }
 
-    if (blocks == 1 && strcmp(command[0], "quit") == 0) {
+    if (blocks == 1 && strcmp(command[0], "exit") == 0) {
         printf("Process killed\n");
         exit(1);
     }
@@ -362,7 +362,7 @@ void showHelp() {
     
     printf("              " BWHT "clear notifications" reset " - clears the notifications\n\n");
     
-    printf("              " BWHT "quit" reset " - kill the process\n\n");
+    printf("              " BWHT "exit" reset " - kill the process\n\n");
 
     char c;
     scanf("%c", &c);
