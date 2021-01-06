@@ -2,7 +2,7 @@
 
 ## How to run
 
-In order to build and run the project, go to the src folder then run the command `make all`. This will compile all the necessary files. To run the server type `./server <ip> <port>` and to run the client type `./client <ip> <port>`. The ip can be your router ip which can be found by running `ifconfig | grep "inet "`, then you can choose an unsed port.
+In order to build and run the project, go to the src folder then run the command `make all`. This will compile all the necessary files. To run the server type `./server` and to run the client type `./client`. The ip is automatically detected.
 
 ## Task:
 
