@@ -6,7 +6,7 @@ In order to build and run the project, go to the src folder then run the command
 
 ## App
 
-<img alt="app design" src="https://i.postimg.cc/MT1ngWW1/Screenshot-from-2021-01-06-10-46-17.png" width="800">
+<img alt="app design" src="https://i.postimg.cc/Xv1M3Fvb/Screenshot-from-2021-01-06-11-34-55.png" width="800">
 
 
 ## Task:
