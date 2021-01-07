@@ -365,6 +365,8 @@ void showHelp() {
     printf("              " BWHT "allow discovery" reset " - allow users to discover your local files\n\n");
     
     printf("              " BWHT "clear notifications" reset " - clears the notifications\n\n");
+
+    printf("              " BWHT "move downloaded files" reset " - move your downloaded files\n\n");
     
     printf("              " BWHT "exit" reset " - kill the process\n\n");
 
