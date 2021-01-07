@@ -236,9 +236,9 @@ void getUsers(int sd, char notification[MAX_NOTIF][500], int* n, User* users, in
         char* line = malloc(500);
 
         if (users[i].isActive == 1) {
-            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BGRN "active" reset, users[i].username, users[i].userID);
+            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BGRN "active" BWHT "." reset, users[i].username, users[i].userID);
         } else {
-            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BYEL "offline" reset, users[i].username, users[i].userID);
+            sprintf(line, BWHT "%s" reset " with id " BWHT "%d" reset " is " BYEL "offline" BWHT "." reset, users[i].username, users[i].userID);
         }
 
         pushNotification(line, notification, n);

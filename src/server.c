@@ -215,6 +215,7 @@ void process_request(void *arg) {
         if (u.userID != -1) {
             sprintf(tdL->user_email, "%s", u.email);
             tdL->isActive = 1;
+            tdL->user_id = u.userID;
         }
 
         if (write(sd, &u, sizeof(User)) == -1) {

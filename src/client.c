@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
         }
 
         for (int i = 0; i < ncUsers; i++) {
-            sprintf(tempLine, BWHT "%s" reset, cUsers[i].username);
+            sprintf(tempLine, BWHT "%s %d" reset, cUsers[i].username, cUsers[i].userID);
             pushNotif(tempLine);
         }
 
@@ -227,12 +227,18 @@ int main(int argc, char *argv[]) {
 
         int connectToID = atoi(command[2]);
 
+        int ac = 0;
         for (int i = 0; i < ncUsers; i++) {
             if (cUsers[i].userID == connectToID) {
-                sprintf(tempLine, BYEL "Already connected to user" BWHT "%s" BYEL "." reset, cUsers->username);
+                sprintf(tempLine, BYEL "Already connected to user " BWHT "%s" BYEL "." reset, cUsers->username);
                 pushNotif(tempLine);
+                ac = 1;
                 break;
             }
+        }
+
+        if (ac == 1) {
+            break;
         }
 
         for (int i = 0; i < naUsers; i++) {
