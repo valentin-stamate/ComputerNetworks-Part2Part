@@ -149,6 +149,7 @@ static void *treat(void *arg) {
 void process_request(void *arg) {
     thData *tdL;
     tdL = (struct thData *)arg;
+    tdL->user_id = -1;
 
     int sd = tdL->sdCl;
 
