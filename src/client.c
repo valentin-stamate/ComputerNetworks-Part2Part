@@ -466,7 +466,14 @@ int main(int argc, char *argv[]) {
         pushNotif(tempLine);
 
         break;
+    case MOVE_DONLOADED_FILES: ;
 
+        system("mkdir ./files");
+        system("mv -v ./downloads/* ./files/");
+
+        pushNotif(BWHT "Download files moved." reset);
+
+        break;
     default:
         pushNotif("Invalid command! To see all commands press " BWHT "help." reset);
         break;

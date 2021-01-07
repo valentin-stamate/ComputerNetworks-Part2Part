@@ -157,6 +157,10 @@ int process(char command[10][255], int blocks) {
         return SEND_FILE;
     }
 
+    if (blocks == 3 && strcmp(command[0], "move") == 0 && strcmp(command[1], "downloaded") == 0 && strcmp(command[2], "files") == 0) {
+        return MOVE_DONLOADED_FILES;
+    }
+
     if (blocks == 1 && strcmp(command[0], "exit") == 0) {
         printf("Process killed\n");
         exit(1);
