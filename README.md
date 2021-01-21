@@ -2,6 +2,8 @@
 
 ## How to run
 
+Before compiling you have to download the source code of `sqlite3` library found here https://www.sqlite.org/download.html and put under `./src/import`. The folder should be called `sqlite`.
+
 In order to build and run the project, go to the src folder then run the command `make all`. This will compile all the necessary files. To run the server type `./server` and to run the client type `./client`. The ip is automatically detected.
 
 ## App
